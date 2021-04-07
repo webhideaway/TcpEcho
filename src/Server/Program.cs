@@ -85,7 +85,7 @@ namespace Server
 #if NETCOREAPP2_1
                 Console.Write(Encoding.UTF8.GetString(segment.Span));
 #else
-                Console.Write(Encoding.UTF8.GetString(segment));
+                Console.Write(Encoding.UTF8.GetString(segment.ToArray()));
 #endif
             }
             Console.WriteLine();

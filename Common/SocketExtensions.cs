@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Server
+namespace Common
 {
     internal static class SocketExtensions
     {
