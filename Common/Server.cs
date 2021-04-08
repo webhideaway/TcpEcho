@@ -68,8 +68,6 @@ namespace Common
 
             // Mark the PipeReader as complete.
             await reader.CompleteAsync();
-
-            Console.WriteLine($"[{socket.RemoteEndPoint}]: disconnected");
         }
 
         private static bool TryReadLine(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> line)
@@ -89,17 +87,9 @@ namespace Common
             return true;
         }
 
-        private static async Task ProcessLineAsync(ReadOnlySequence<byte> buffer)
+        private async Task<byte[]> ProcessLineAsync(ReadOnlySequence<byte> buffer)
         {
-            foreach (var segment in buffer)
-            {
-#if NETCOREAPP2_1
-                Console.Write(Encoding.UTF8.GetString(segment.Span));
-#else
-                Console.Write(Encoding.UTF8.GetString(segment.ToArray()));
-#endif
-            }
-            Console.WriteLine();
+            return await Task.FromResult(buffer.ToArray());
         }
     }
 }
