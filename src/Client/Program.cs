@@ -6,8 +6,8 @@ namespace TcpEcho
     {
         static async Task Main(string[] args)
         {
-            var client = new Common.Client(1212, 3434);
-            await client.PostAsync();
+            var client = new Common.Client(1212);
+            await client.PostAsync(3434);
         }
     }
 }

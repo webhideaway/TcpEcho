@@ -13,9 +13,9 @@ namespace Common
     public class Server
     {
         private readonly Socket _listenSocket;
-        private readonly Client _callbackClient;
+        private Lazy<Client> _callbackClient;
 
-        public Server(int localPort, int? callbackPort = null)
+        public Server(int localPort)
         {
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(new IPEndPoint(IPAddress.Loopback, localPort));
@@ -23,11 +23,13 @@ namespace Common
             Console.WriteLine($"Listening on local port {localPort}");
 
             _listenSocket.Listen(120);
-            _callbackClient = callbackPort.HasValue ? new Client(callbackPort.Value) : null;
         }
 
-        public async Task ListenAsync()
+        public async Task ListenAsync(int? callbackPort = null)
         {
+            _callbackClient = new Lazy<Client>(() =>
+                callbackPort.HasValue ? new Client(callbackPort.Value) : null);
+
             while (true)
             {
                 var socket = await _listenSocket.AcceptAsync();
@@ -50,7 +52,7 @@ namespace Common
                 {
                     // Process the line.
                     _ = ProcessLineAsync(line).ContinueWith(async t => await (
-                        _callbackClient == null ? Task.CompletedTask : _callbackClient.PostAsync()
+                        _callbackClient.Value == null ? Task.CompletedTask : _callbackClient.Value.PostAsync()
                     ));
                 }
 
