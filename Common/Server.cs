@@ -44,7 +44,7 @@ namespace Common
                 while (TryReadLine(ref buffer, out ReadOnlySequence<byte> line))
                 {
                     // Process the line.
-                    _ = ProcessLine(line).ContinueWith(async t => await (
+                    _ = ProcessLineAsync(line).ContinueWith(async t => await (
                         callbackPort.HasValue ? Common.Client.RunAsync(callbackPort.Value) : Task.CompletedTask
                     ));
                 }
@@ -82,7 +82,7 @@ namespace Common
             return true;
         }
 
-        private static async Task ProcessLine(ReadOnlySequence<byte> buffer)
+        private static async Task ProcessLineAsync(ReadOnlySequence<byte> buffer)
         {
             foreach (var segment in buffer)
             {

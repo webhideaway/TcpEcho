@@ -12,7 +12,7 @@ namespace Server
     {
         static async Task Main(string[] args)
         {
-            await Common.Server.RunAsync(1212); //.ContinueWith(async t => await Common.Client.RunAsync(3434));
+            await Common.Server.RunAsync(1212, 3434);
         }
     }
 }

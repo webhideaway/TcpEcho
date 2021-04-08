@@ -12,7 +12,7 @@ namespace TcpEcho
     {
         static async Task Main(string[] args)
         {
-            await Common.Client.RunAsync(1212); //.ContinueWith(async t => await Common.Server.RunAsync(3434));
+            await Common.Client.RunAsync(1212, 3434);
         }
     }
 }
