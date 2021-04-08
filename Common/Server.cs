@@ -12,26 +12,31 @@ namespace Common
 {
     public class Server
     {
-        public static async Task RunAsync(int localPort, int? callbackPort = null)
+        private readonly Socket _listenSocket;
+        private readonly Client _callbackClient;
+
+        public Server(int localPort, int? callbackPort = null)
         {
-            var listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            listenSocket.Bind(new IPEndPoint(IPAddress.Loopback, localPort));
+            _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            _listenSocket.Bind(new IPEndPoint(IPAddress.Loopback, localPort));
 
             Console.WriteLine($"Listening on local port {localPort}");
 
-            listenSocket.Listen(120);
+            _listenSocket.Listen(120);
+            _callbackClient = callbackPort.HasValue ? new Client(callbackPort.Value) : null;
+        }
 
+        public async Task ListenAsync()
+        {
             while (true)
             {
-                var socket = await listenSocket.AcceptAsync();
-                _ = ProcessLinesAsync(socket, callbackPort);
+                var socket = await _listenSocket.AcceptAsync();
+                _ = ProcessLinesAsync(socket);
             }
         }
 
-        private static async Task ProcessLinesAsync(Socket socket, int? callbackPort = null)
+        private async Task ProcessLinesAsync(Socket socket)
         {
-            Console.WriteLine($"Connected to remote port {((IPEndPoint)socket.RemoteEndPoint).Port}");
-
             // Create a PipeReader over the network stream
             var stream = new NetworkStream(socket);
             var reader = PipeReader.Create(stream);
@@ -45,7 +50,7 @@ namespace Common
                 {
                     // Process the line.
                     _ = ProcessLineAsync(line).ContinueWith(async t => await (
-                        callbackPort.HasValue ? Common.Client.RunAsync(callbackPort.Value) : Task.CompletedTask
+                        _callbackClient == null ? Task.CompletedTask : _callbackClient.PostAsync()
                     ));
                 }
 

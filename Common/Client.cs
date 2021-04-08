@@ -1,28 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Common
 {
     public class Client
     {
-        public static async Task RunAsync(int remotePort, int? callbackPort = null)
+        private readonly Stream _clientStream;
+        private readonly Server _callbackServer;
+        public Client(int remotePort, int? callbackPort = null)
         {
             var clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-
             Console.WriteLine($"Connecting to remote port {remotePort}");
 
             clientSocket.Connect(new IPEndPoint(IPAddress.Loopback, remotePort));
-            var stream = new NetworkStream(clientSocket);
+            _clientStream = new NetworkStream(clientSocket);
 
+            _callbackServer = callbackPort.HasValue ? new Server(callbackPort.Value) : null;
+        }
+        public async Task PostAsync()
+        {
             await Task.WhenAll(
-                Console.OpenStandardInput().CopyToAsync(stream),
-                callbackPort.HasValue ? Common.Server.RunAsync(callbackPort.Value) : Task.CompletedTask
-            );
+                Console.OpenStandardInput().CopyToAsync(_clientStream),
+                _callbackServer == null ? Task.CompletedTask : _callbackServer.ListenAsync()
+            ); ;
         }
     }
 }
