@@ -12,25 +12,25 @@ namespace Common
 {
     public class Server
     {
-        public static async Task RunAsync()
+        public static async Task RunAsync(int localPort, int? callbackPort = null)
         {
             var listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            listenSocket.Bind(new IPEndPoint(IPAddress.Loopback, 8087));
+            listenSocket.Bind(new IPEndPoint(IPAddress.Loopback, localPort));
 
-            Console.WriteLine("Listening on port 8087");
+            Console.WriteLine($"Listening on local port {localPort}");
 
             listenSocket.Listen(120);
 
             while (true)
             {
                 var socket = await listenSocket.AcceptAsync();
-                _ = ProcessLinesAsync(socket);
+                _ = ProcessLinesAsync(socket, callbackPort);
             }
         }
 
-        private static async Task ProcessLinesAsync(Socket socket)
+        private static async Task ProcessLinesAsync(Socket socket, int? callbackPort = null)
         {
-            Console.WriteLine($"[{socket.RemoteEndPoint}]: connected");
+            Console.WriteLine($"Connected to remote port {((IPEndPoint)socket.RemoteEndPoint).Port}");
 
             // Create a PipeReader over the network stream
             var stream = new NetworkStream(socket);
@@ -44,7 +44,9 @@ namespace Common
                 while (TryReadLine(ref buffer, out ReadOnlySequence<byte> line))
                 {
                     // Process the line.
-                    ProcessLine(line);
+                    _ = ProcessLine(line).ContinueWith(async t => await (
+                        callbackPort.HasValue ? Common.Client.RunAsync(callbackPort.Value) : Task.CompletedTask
+                    ));
                 }
 
                 // Tell the PipeReader how much of the buffer has been consumed.
@@ -80,7 +82,7 @@ namespace Common
             return true;
         }
 
-        private static void ProcessLine(in ReadOnlySequence<byte> buffer)
+        private static async Task ProcessLine(ReadOnlySequence<byte> buffer)
         {
             foreach (var segment in buffer)
             {

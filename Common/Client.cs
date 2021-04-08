@@ -10,16 +10,19 @@ namespace Common
 {
     public class Client
     {
-        public static async Task RunAsync()
+        public static async Task RunAsync(int remotePort, int? callbackPort = null)
         {
             var clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-            Console.WriteLine("Connecting to port 8087");
+            Console.WriteLine($"Connecting to remote port {remotePort}");
 
-            clientSocket.Connect(new IPEndPoint(IPAddress.Loopback, 8087));
+            clientSocket.Connect(new IPEndPoint(IPAddress.Loopback, remotePort));
             var stream = new NetworkStream(clientSocket);
 
-            await Console.OpenStandardInput().CopyToAsync(stream);
+            await Task.WhenAll(
+                Console.OpenStandardInput().CopyToAsync(stream),
+                callbackPort.HasValue ? Common.Server.RunAsync(callbackPort.Value) : Task.CompletedTask
+            );
         }
     }
 }
