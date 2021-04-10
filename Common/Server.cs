@@ -60,7 +60,7 @@ namespace Common
                     {
                         handler?.Invoke(data);
                         if (_callbackClient.Value != null)
-                            await _callbackClient.Value.PostAsync(data.ToArray());
+                            _ = _callbackClient.Value.PostAsync(data.ToArray());
                     }
                 }
 
