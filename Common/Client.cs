@@ -18,14 +18,30 @@ namespace Common
             clientSocket.Connect(new IPEndPoint(IPAddress.Loopback, remotePort));
             _clientStream = new NetworkStream(clientSocket);
         }
-        public async Task PostAsync(int? callbackPort = null)
+
+        private void InitCallback(int? callbackPort = null)
         {
-            _callbackServer = new Lazy<Server>(() => 
+            _callbackServer = new Lazy<Server>(() =>
                 callbackPort.HasValue ? new Server(callbackPort.Value) : null);
+        }
+
+        public async Task PostAsync(Stream stream, int? callbackPort = null, Action<byte[]> handler = null)
+        {
+            InitCallback(callbackPort);
 
             await Task.WhenAll(
-                Console.OpenStandardInput().CopyToAsync(_clientStream),
-                _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync()
+                stream.CopyToAsync(_clientStream),
+                _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)
+            ); ;
+        }
+
+        public async Task PostAsync(byte[] data, int? callbackPort = null, Action<byte[]> handler = null)
+        {
+            InitCallback(callbackPort);
+
+            await Task.WhenAll(
+                _clientStream.WriteAsync(data, 0, data.Length),
+                _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)
             ); ;
         }
     }

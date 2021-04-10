@@ -25,19 +25,24 @@ namespace Common
             _listenSocket.Listen(120);
         }
 
-        public async Task ListenAsync(int? callbackPort = null)
+        private void InitCallback(int? callbackPort = null)
         {
             _callbackClient = new Lazy<Client>(() =>
                 callbackPort.HasValue ? new Client(callbackPort.Value) : null);
+        }
+
+        public async Task ListenAsync(Action<byte[]> handler = null, int ? callbackPort = null)
+        {
+            InitCallback(callbackPort);
 
             while (true)
             {
                 var socket = await _listenSocket.AcceptAsync();
-                _ = ProcessLinesAsync(socket);
+                _ = ProcessLinesAsync(socket, handler);
             }
         }
 
-        private async Task ProcessLinesAsync(Socket socket)
+        private async Task ProcessLinesAsync(Socket socket, Action<byte[]> handler = null)
         {
             // Create a PipeReader over the network stream
             var stream = new NetworkStream(socket);
@@ -51,9 +56,14 @@ namespace Common
                 while (TryReadLine(ref buffer, out ReadOnlySequence<byte> line))
                 {
                     // Process the line.
-                    _ = ProcessLineAsync(line).ContinueWith(async t => await (
-                        _callbackClient.Value == null ? Task.CompletedTask : _callbackClient.Value.PostAsync()
-                    ));
+                    if (TryProcessLine(line, out byte[] data))
+                    {
+                        handler?.Invoke(data);
+                        await (
+                            _callbackClient.Value == null ? Task.CompletedTask :
+                                _callbackClient.Value.PostAsync(data)
+                        );
+                    }
                 }
 
                 // Tell the PipeReader how much of the buffer has been consumed.
@@ -87,9 +97,10 @@ namespace Common
             return true;
         }
 
-        private async Task<byte[]> ProcessLineAsync(ReadOnlySequence<byte> buffer)
+        private static bool TryProcessLine(ReadOnlySequence<byte> buffer, out byte[] data)
         {
-            return await Task.FromResult(buffer.ToArray());
+            data = buffer.ToArray();
+            return true;
         }
     }
 }
