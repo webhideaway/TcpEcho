@@ -36,7 +36,7 @@ namespace Common
             while (true)
             {
                 var socket = await _listenSocket.AcceptAsync();
-                _ = ProcessLinesAsync(socket, handler);
+                await ProcessLinesAsync(socket, handler);
             }
         }
 
@@ -58,7 +58,7 @@ namespace Common
                     {
                         handler?.Invoke(data);
                         if (_callbackClient.Value != null)
-                            _ = _callbackClient.Value.PostAsync(data.ToArray());
+                            await _callbackClient.Value.PostAsync(data.ToArray());
                     }
                 }
 
