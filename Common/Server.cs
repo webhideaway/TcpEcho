@@ -31,7 +31,7 @@ namespace Common
                 callbackPort.HasValue ? new Client(callbackPort.Value) : null);
         }
 
-        public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, int ? callbackPort = null)
+        public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, int? callbackPort = null)
         {
             InitCallback(callbackPort);
 
@@ -59,10 +59,8 @@ namespace Common
                     if (TryProcessLine(line, out ReadOnlyMemory<byte> data))
                     {
                         handler?.Invoke(data);
-                        await (
-                            _callbackClient.Value == null ? Task.CompletedTask :
-                                _callbackClient.Value.PostAsync(data.ToArray())
-                        );
+                        if (_callbackClient.Value != null)
+                            await _callbackClient.Value.PostAsync(data.ToArray());
                     }
                 }
 
