@@ -31,7 +31,7 @@ namespace Common
                 callbackPort.HasValue ? new Client(callbackPort.Value) : null);
         }
 
-        public async Task ListenAsync(Action<byte[]> handler = null, int ? callbackPort = null)
+        public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, int ? callbackPort = null)
         {
             InitCallback(callbackPort);
 
@@ -42,7 +42,7 @@ namespace Common
             }
         }
 
-        private async Task ProcessLinesAsync(Socket socket, Action<byte[]> handler = null)
+        private async Task ProcessLinesAsync(Socket socket, Action<ReadOnlyMemory<byte>> handler = null)
         {
             // Create a PipeReader over the network stream
             var stream = new NetworkStream(socket);
@@ -56,12 +56,12 @@ namespace Common
                 while (TryReadLine(ref buffer, out ReadOnlySequence<byte> line))
                 {
                     // Process the line.
-                    if (TryProcessLine(line, out byte[] data))
+                    if (TryProcessLine(line, out ReadOnlyMemory<byte> data))
                     {
                         handler?.Invoke(data);
                         await (
                             _callbackClient.Value == null ? Task.CompletedTask :
-                                _callbackClient.Value.PostAsync(data)
+                                _callbackClient.Value.PostAsync(data.ToArray())
                         );
                     }
                 }
@@ -97,7 +97,7 @@ namespace Common
             return true;
         }
 
-        private static bool TryProcessLine(ReadOnlySequence<byte> buffer, out byte[] data)
+        private static bool TryProcessLine(in ReadOnlySequence<byte> buffer, out ReadOnlyMemory<byte> data)
         {
             data = buffer.ToArray();
             return true;

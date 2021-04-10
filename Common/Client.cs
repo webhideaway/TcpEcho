@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -25,7 +26,7 @@ namespace Common
                 callbackPort.HasValue ? new Server(callbackPort.Value) : null);
         }
 
-        public async Task PostAsync(Stream stream, int? callbackPort = null, Action<byte[]> handler = null)
+        public async Task PostAsync(Stream stream, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
         {
             InitCallback(callbackPort);
 
@@ -35,7 +36,7 @@ namespace Common
             ); ;
         }
 
-        public async Task PostAsync(byte[] data, int? callbackPort = null, Action<byte[]> handler = null)
+        public async Task PostAsync(byte[] data, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
         {
             InitCallback(callbackPort);
 

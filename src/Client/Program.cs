@@ -10,7 +10,7 @@ namespace TcpEcho
         {
             var client = new Common.Client(1212);
             await client.PostAsync(Console.OpenStandardInput(), 3434, 
-                data => Console.WriteLine(Encoding.UTF8.GetString(data)));
+                data => Console.WriteLine(Encoding.UTF8.GetString(data.ToArray())));
         }
     }
 }
