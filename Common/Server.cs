@@ -31,11 +31,11 @@ namespace Common
             while (true)
             {
                 var socket = await _listenSocket.AcceptAsync();
-                await ProcessLinesAsync(socket, handler);
+                await ProcessRequestsAsync(socket, handler);
             }
         }
 
-        private async Task ProcessLinesAsync(Socket socket, Action<ReadOnlyMemory<byte>> handler = null)
+        private async Task ProcessRequestsAsync(Socket socket, Action<ReadOnlyMemory<byte>> handler = null)
         {
             // Create a PipeReader over the network stream
             var stream = new NetworkStream(socket);
@@ -46,14 +46,14 @@ namespace Common
                 ReadResult result = await reader.ReadAsync();
                 ReadOnlySequence<byte> buffer = result.Buffer;
 
-                while (TryReadLine(ref buffer, out ReadOnlySequence<byte> line))
+                while (TryReadRequest(ref buffer, out ReadOnlySequence<byte> request))
                 {
-                    // Process the line.
-                    if (TryProcessLine(line, out ReadOnlyMemory<byte> data))
+                    // Process the request.
+                    if (TryProcessRequest(request, out ReadOnlyMemory<byte> response))
                     {
-                        handler?.Invoke(data);
+                        handler?.Invoke(response);
                         if (_callbackClient.Value != null)
-                            await _callbackClient.Value.PostAsync(data.ToArray());
+                            await _callbackClient.Value.PostAsync(response.ToArray());
                     }
                 }
 
@@ -71,33 +71,33 @@ namespace Common
             await reader.CompleteAsync();
         }
 
-        private static bool TryReadLine(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> line)
+        private static bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> request)
         {
             // Look for a EOL in the buffer.
             SequencePosition? charPos = buffer.PositionOf((byte)'\n');
 
             if (charPos == null)
             {
-                line = default;
+                request = default;
                 return false;
             }
 
-            // Skip the line + the \n.
+            // Skip the request + the \n.
             SequencePosition seqPos = buffer.GetPosition(1, charPos.Value);
-            line = buffer.Slice(0, seqPos);
+            request = buffer.Slice(0, seqPos);
             buffer = buffer.Slice(seqPos);
             return true;
         }
 
-        private static bool TryProcessLine(in ReadOnlySequence<byte> line, out ReadOnlyMemory<byte> data)
+        private static bool TryProcessRequest(in ReadOnlySequence<byte> request, out ReadOnlyMemory<byte> response)
         {
-            if (line.Equals(default))
+            if (request.Equals(default))
             {
-                data = default;
+                response = default;
                 return false;
             }
             
-            data = line.ToArray();
+            response = request.ToArray();
             return true;
         }
     }
