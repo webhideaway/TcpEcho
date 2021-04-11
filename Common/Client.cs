@@ -25,24 +25,23 @@ namespace Common
                 callbackPort.HasValue ? new Server(callbackPort.Value) : null);
         }
 
-        public async Task PostAsync(Stream stream, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
+        private async Task PostAsync(Task task, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
         {
             InitCallback(callbackPort);
 
-            await Task.WhenAll(
-                stream.CopyToAsync(_clientStream),
+            await Task.WhenAll(task,
                 _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)
             );
         }
 
+        public async Task PostAsync(Stream stream, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
+        {
+            await PostAsync(stream.CopyToAsync(_clientStream), callbackPort, handler);
+        }
+
         public async Task PostAsync(byte[] data, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
         {
-            InitCallback(callbackPort);
-
-            await Task.WhenAll(
-                _clientStream.WriteAsync(data, 0, data.Length),
-                _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)
-            );
+            await PostAsync(_clientStream.WriteAsync(data, 0, data.Length), callbackPort, handler);
         }
     }
 }
