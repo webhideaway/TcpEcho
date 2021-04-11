@@ -32,7 +32,7 @@ namespace Common
             await Task.WhenAll(
                 stream.CopyToAsync(_clientStream),
                 _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)
-            ); ;
+            );
         }
 
         public async Task PostAsync(byte[] data, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
@@ -42,7 +42,7 @@ namespace Common
             await Task.WhenAll(
                 _clientStream.WriteAsync(data, 0, data.Length),
                 _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)
-            ); ;
+            );
         }
     }
 }

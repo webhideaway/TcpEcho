@@ -79,23 +79,30 @@ namespace Common
         private static bool TryReadLine(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> line)
         {
             // Look for a EOL in the buffer.
-            SequencePosition? position = buffer.PositionOf((byte)'\n');
+            SequencePosition? charPos = buffer.PositionOf((byte)'\n');
 
-            if (position == null)
+            if (charPos == null)
             {
                 line = default;
                 return false;
             }
 
             // Skip the line + the \n.
-            line = buffer.Slice(0, position.Value);
-            buffer = buffer.Slice(buffer.GetPosition(1, position.Value));
+            SequencePosition seqPos = buffer.GetPosition(1, charPos.Value);
+            line = buffer.Slice(0, seqPos);
+            buffer = buffer.Slice(seqPos);
             return true;
         }
 
-        private static bool TryProcessLine(in ReadOnlySequence<byte> buffer, out ReadOnlyMemory<byte> data)
+        private static bool TryProcessLine(in ReadOnlySequence<byte> line, out ReadOnlyMemory<byte> data)
         {
-            data = buffer.ToArray();
+            if (line.Equals(default))
+            {
+                data = default;
+                return false;
+            }
+            
+            data = line.ToArray();
             return true;
         }
     }
