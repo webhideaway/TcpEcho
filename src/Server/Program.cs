@@ -10,7 +10,7 @@ namespace TcpEcho
         {
             var server = new Common.Server(1212);
             await server.ListenAsync(data => 
-                Console.WriteLine(Encoding.UTF8.GetString(data.ToArray())), 3434);
+                Console.Write(Encoding.UTF8.GetString(data.ToArray())), 3434);
         }
     }
 }
