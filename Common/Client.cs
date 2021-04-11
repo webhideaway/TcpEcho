@@ -19,15 +19,10 @@ namespace Common
             _clientStream = new NetworkStream(clientSocket);
         }
 
-        private void InitCallback(int? callbackPort = null)
+        private async Task PostAsync(Task task, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
         {
             _callbackServer = new Lazy<Server>(() =>
                 callbackPort.HasValue ? new Server(callbackPort.Value) : null);
-        }
-
-        private async Task PostAsync(Task task, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
-        {
-            InitCallback(callbackPort);
 
             await Task.WhenAll(task,
                 _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)

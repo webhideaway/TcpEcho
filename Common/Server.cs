@@ -23,15 +23,10 @@ namespace Common
             _listenSocket.Listen(120);
         }
 
-        private void InitCallback(int? callbackPort = null)
+        public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, int? callbackPort = null)
         {
             _callbackClient = new Lazy<Client>(() =>
                 callbackPort.HasValue ? new Client(callbackPort.Value) : null);
-        }
-
-        public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, int? callbackPort = null)
-        {
-            InitCallback(callbackPort);
 
             while (true)
             {
