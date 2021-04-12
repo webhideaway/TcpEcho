@@ -13,20 +13,25 @@ namespace Common
         private readonly Socket _listenSocket;
         private Lazy<Client> _callbackClient;
 
-        public Server(int localPort)
+        public Server(EndPoint localEndPoint)
         {
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            _listenSocket.Bind(new IPEndPoint(IPAddress.Loopback, localPort));
+            _listenSocket.Bind(localEndPoint);
 
-            Console.WriteLine($"Listening on local port {localPort}");
+            Console.WriteLine($"Listening on local end point {localEndPoint}");
 
             _listenSocket.Listen(120);
         }
 
-        public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, int? callbackPort = null)
+        public async Task ListenAsync<TRequest, TResponse>(Action<TResponse> handler)
+        {
+            await Task.CompletedTask;
+        }
+
+        public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, EndPoint callbackEndPoint = null)
         {
             _callbackClient = new Lazy<Client>(() =>
-                callbackPort.HasValue ? new Client(callbackPort.Value) : null);
+                callbackEndPoint == null ? null : new Client(callbackEndPoint));
 
             while (true)
             {

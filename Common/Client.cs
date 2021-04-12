@@ -10,33 +10,38 @@ namespace Common
     {
         private readonly Stream _clientStream;
         private Lazy<Server> _callbackServer;
-        public Client(int remotePort)
+        public Client(EndPoint remoteEndPoint)
         {
             var clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            Console.WriteLine($"Connecting to remote port {remotePort}");
+            Console.WriteLine($"Connecting to remote end point {remoteEndPoint}");
 
-            clientSocket.Connect(new IPEndPoint(IPAddress.Loopback, remotePort));
+            clientSocket.Connect(remoteEndPoint);
             _clientStream = new NetworkStream(clientSocket);
         }
 
-        private async Task PostAsync(Task task, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
+        private async Task PostAsync(Task task, EndPoint callbackEndPoint = null, Action<ReadOnlyMemory<byte>> handler = null)
         {
             _callbackServer = new Lazy<Server>(() =>
-                callbackPort.HasValue ? new Server(callbackPort.Value) : null);
+                callbackEndPoint == null ? null : new Server(callbackEndPoint));
 
             await Task.WhenAll(task,
                 _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)
             );
         }
 
-        public async Task PostAsync(Stream stream, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
+        public async Task PostAsync(Stream stream, EndPoint callbackEndPoint = null, Action<ReadOnlyMemory<byte>> handler = null)
         {
-            await PostAsync(stream.CopyToAsync(_clientStream), callbackPort, handler);
+            await PostAsync(stream.CopyToAsync(_clientStream), callbackEndPoint, handler);
         }
 
-        public async Task PostAsync(byte[] data, int? callbackPort = null, Action<ReadOnlyMemory<byte>> handler = null)
+        public async Task PostAsync(byte[] data, EndPoint callbackEndPoint = null, Action<ReadOnlyMemory<byte>> handler = null)
         {
-            await PostAsync(_clientStream.WriteAsync(data, 0, data.Length), callbackPort, handler);
+            await PostAsync(_clientStream.WriteAsync(data, 0, data.Length), callbackEndPoint, handler);
+        }
+
+        public async Task<TResponse> PostAsync<TRequest, TResponse>(TRequest request)
+        {
+            return await Task.FromResult<TResponse>(default);
         }
     }
 }
