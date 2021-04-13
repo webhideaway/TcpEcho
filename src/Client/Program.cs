@@ -10,10 +10,10 @@ namespace TcpEcho
         static async Task Main(string[] args)
         {
             var client = new Common.Client(
-                new IPEndPoint(IPAddress.Loopback, 1212));
+                new IPEndPoint(IPAddress.Loopback, 1212),
+                new IPEndPoint(IPAddress.Loopback, 3434));
 
             await client.PostAsync(Console.OpenStandardInput(), 
-                new IPEndPoint(IPAddress.Loopback, 3434), 
                 data => Console.Write(Encoding.UTF8.GetString(data.ToArray())));
         }
     }

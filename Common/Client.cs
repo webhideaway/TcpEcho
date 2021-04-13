@@ -8,40 +8,77 @@ namespace Common
 {
     public class Client
     {
-        private readonly Stream _clientStream;
-        private Lazy<Server> _callbackServer;
-        public Client(EndPoint remoteEndPoint)
+        private readonly Stream _remoteStream;
+        private Lazy<Server> _callbackListener;
+
+        private readonly EndPoint _callbackEndPoint;
+        private readonly IFormatter _formatter;
+
+        public Client(EndPoint remoteEndPoint, EndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
-            var clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            var remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             Console.WriteLine($"Connecting to remote end point {remoteEndPoint}");
 
-            clientSocket.Connect(remoteEndPoint);
-            _clientStream = new NetworkStream(clientSocket);
+            remoteSocket.Connect(remoteEndPoint);
+            _remoteStream = new NetworkStream(remoteSocket);
+            
+            _callbackEndPoint = callbackEndPoint;
+            _formatter = formatter ?? new DefaultFormatter();
         }
 
-        private async Task PostAsync(Task task, EndPoint callbackEndPoint = null, Action<ReadOnlyMemory<byte>> handler = null)
+        private void InitCallback()
         {
-            _callbackServer = new Lazy<Server>(() =>
-                callbackEndPoint == null ? null : new Server(callbackEndPoint));
-
-            await Task.WhenAll(task,
-                _callbackServer.Value == null ? Task.CompletedTask : _callbackServer.Value.ListenAsync(handler)
-            );
+            _callbackListener = new Lazy<Server>(() =>
+               _callbackEndPoint == null ? null : new Server(_callbackEndPoint));
         }
 
-        public async Task PostAsync(Stream stream, EndPoint callbackEndPoint = null, Action<ReadOnlyMemory<byte>> handler = null)
+        private Task PostTask(Stream stream)
         {
-            await PostAsync(stream.CopyToAsync(_clientStream), callbackEndPoint, handler);
+            return stream.CopyToAsync(_remoteStream);
         }
 
-        public async Task PostAsync(byte[] data, EndPoint callbackEndPoint = null, Action<ReadOnlyMemory<byte>> handler = null)
+        private Task PostTask(byte[] data)
         {
-            await PostAsync(_clientStream.WriteAsync(data, 0, data.Length), callbackEndPoint, handler);
+            return _remoteStream.WriteAsync(data, 0, data.Length);
+        }
+
+        private Task CallbackTask(Action<ReadOnlyMemory<byte>> handler)
+        {
+            return handler == null || _callbackListener.Value == null 
+                ? Task.CompletedTask : _callbackListener.Value.ListenAsync(handler);
+        }
+
+        private async Task PostAsync(Task task, Action<ReadOnlyMemory<byte>> handler = null)
+        {
+            InitCallback();
+
+            await Task.WhenAll(task, CallbackTask(handler));
+        }
+
+        public async Task PostAsync(Stream stream, Action<ReadOnlyMemory<byte>> handler = null)
+        {
+            await PostAsync(PostTask(stream), handler);
+        }
+
+        public async Task PostAsync(byte[] data, Action<ReadOnlyMemory<byte>> handler = null)
+        {
+            await PostAsync(PostTask(data), handler);
         }
 
         public async Task<TResponse> PostAsync<TRequest, TResponse>(TRequest request)
         {
-            return await Task.FromResult<TResponse>(default);
+            var input = _formatter.Serialize<TRequest>(request);
+
+            var response = default(TResponse);
+
+            void handler(ReadOnlyMemory<byte> output)
+            {
+                response = _formatter.Deserialize<TResponse>(output.ToArray());
+            }
+
+            await PostAsync(input, handler);
+
+            return response;
         }
     }
 }
