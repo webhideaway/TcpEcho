@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
@@ -23,6 +24,18 @@ namespace Common
 
             _listenSocket.Listen(120);
             _formatter = formatter ?? new DefaultFormatter();
+        }
+
+        private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers 
+            = new ConcurrentDictionary<Type, Delegate>();
+
+        public void RegisterHandler<TData>(Action<TData> handler)
+        {
+            _registeredHandlers.AddOrUpdate(typeof(TData), handler, (k, v) =>
+            {
+                return v.GetInvocationList().Contains(handler)
+                    ? v : Delegate.Combine(v, handler);
+            });
         }
 
         public async Task ListenAsync<TRequest, TResponse>(Action<TResponse> handler)
