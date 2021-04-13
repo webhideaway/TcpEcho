@@ -65,6 +65,13 @@ namespace Common
             await PostAsync(PostTask(data), handler);
         }
 
+        public async Task PostAsync<TData>(TData data)
+        {
+            var input = _formatter.Serialize<TData>(data);
+
+            await PostAsync(input);
+        }
+
         public async Task<TResponse> PostAsync<TRequest, TResponse>(TRequest request)
         {
             var input = _formatter.Serialize<TRequest>(request);

@@ -11,16 +11,18 @@ namespace Common
     public class Server
     {
         private readonly Socket _listenSocket;
-        private Lazy<Client> _callbackClient;
+        private Lazy<Client> _callbackPoster;
+        private readonly IFormatter _formatter;
 
-        public Server(EndPoint localEndPoint)
+        public Server(EndPoint listenEndPoint, IFormatter formatter = null)
         {
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            _listenSocket.Bind(localEndPoint);
+            _listenSocket.Bind(listenEndPoint);
 
-            Console.WriteLine($"Listening on local end point {localEndPoint}");
+            Console.WriteLine($"Listening on local end point {listenEndPoint}");
 
             _listenSocket.Listen(120);
+            _formatter = formatter ?? new DefaultFormatter();
         }
 
         public async Task ListenAsync<TRequest, TResponse>(Action<TResponse> handler)
@@ -30,7 +32,7 @@ namespace Common
 
         public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, EndPoint callbackEndPoint = null)
         {
-            _callbackClient = new Lazy<Client>(() =>
+            _callbackPoster = new Lazy<Client>(() =>
                 callbackEndPoint == null ? null : new Client(callbackEndPoint));
 
             while (true)
@@ -57,8 +59,8 @@ namespace Common
                     if (TryProcessRequest(request, out ReadOnlyMemory<byte> response))
                     {
                         handler?.Invoke(response);
-                        if (_callbackClient.Value != null)
-                            await _callbackClient.Value.PostAsync(response.ToArray());
+                        if (_callbackPoster.Value != null)
+                            await _callbackPoster.Value.PostAsync(response.ToArray());
                     }
                 }
 
