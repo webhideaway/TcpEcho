@@ -26,12 +26,6 @@ namespace Common
             _formatter = formatter ?? new DefaultFormatter();
         }
 
-        private void InitCallback()
-        {
-            _callbackListener = new Lazy<Server>(() =>
-               _callbackEndPoint == null ? null : new Server(_callbackEndPoint));
-        }
-
         private Task PostTask(Stream stream)
         {
             return stream.CopyToAsync(_remoteStream);
@@ -44,15 +38,18 @@ namespace Common
 
         private Task CallbackTask(Action<ReadOnlyMemory<byte>> handler)
         {
-            return handler == null || _callbackListener.Value == null 
-                ? Task.CompletedTask : _callbackListener.Value.ListenAsync(handler);
+            if (handler == null) return Task.CompletedTask;
+
+            _callbackListener = new Lazy<Server>(
+                () => new Server(_callbackEndPoint));
+
+            _callbackListener.Value.RegisterHandler(handler);
+            return _callbackListener.Value.ListenAsync();
         }
 
         private async Task PostAsync(Task task, Action<ReadOnlyMemory<byte>> handler = null)
         {
-            InitCallback();
-
-            await Task.WhenAll(task, CallbackTask(handler));
+             await Task.WhenAll(task, CallbackTask(handler));
         }
 
         public async Task PostAsync(Stream stream, Action<ReadOnlyMemory<byte>> handler = null)

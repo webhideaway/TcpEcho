@@ -12,8 +12,12 @@ namespace Common
     public class Server
     {
         private readonly Socket _listenSocket;
-        private Lazy<Client> _callbackPoster;
         private readonly IFormatter _formatter;
+
+        private readonly ConcurrentDictionary<EndPoint, Client> _callbackClients
+            = new ConcurrentDictionary<EndPoint, Client>();
+        private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers
+            = new ConcurrentDictionary<Type, Delegate>();
 
         public Server(EndPoint listenEndPoint, IFormatter formatter = null)
         {
@@ -26,9 +30,6 @@ namespace Common
             _formatter = formatter ?? new DefaultFormatter();
         }
 
-        private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers 
-            = new ConcurrentDictionary<Type, Delegate>();
-
         public void RegisterHandler<TData>(Action<TData> handler)
         {
             _registeredHandlers.AddOrUpdate(typeof(TData), handler, (k, v) =>
@@ -38,24 +39,16 @@ namespace Common
             });
         }
 
-        public async Task ListenAsync<TRequest, TResponse>(Action<TResponse> handler)
+        public async Task ListenAsync()
         {
-            await Task.CompletedTask;
-        }
-
-        public async Task ListenAsync(Action<ReadOnlyMemory<byte>> handler = null, EndPoint callbackEndPoint = null)
-        {
-            _callbackPoster = new Lazy<Client>(() =>
-                callbackEndPoint == null ? null : new Client(callbackEndPoint));
-
             while (true)
             {
                 var socket = await _listenSocket.AcceptAsync();
-                await ProcessRequestsAsync(socket, handler);
+                await ProcessRequestsAsync(socket);
             }
         }
 
-        private async Task ProcessRequestsAsync(Socket socket, Action<ReadOnlyMemory<byte>> handler = null)
+        private async Task ProcessRequestsAsync(Socket socket)
         {
             // Create a PipeReader over the network stream
             var stream = new NetworkStream(socket);
@@ -66,15 +59,10 @@ namespace Common
                 ReadResult result = await reader.ReadAsync();
                 ReadOnlySequence<byte> buffer = result.Buffer;
 
-                while (TryReadRequest(ref buffer, out ReadOnlySequence<byte> request))
+                while (TryReadRequest(ref buffer, out ReadOnlyMemory<byte> request))
                 {
                     // Process the request.
-                    if (TryProcessRequest(request, out ReadOnlyMemory<byte> response))
-                    {
-                        handler?.Invoke(response);
-                        if (_callbackPoster.Value != null)
-                            await _callbackPoster.Value.PostAsync(response.ToArray());
-                    }
+                    await ProcessRequestAsync(request);
                 }
 
                 // Tell the PipeReader how much of the buffer has been consumed.
@@ -91,7 +79,7 @@ namespace Common
             await reader.CompleteAsync();
         }
 
-        private static bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out ReadOnlySequence<byte> request)
+        private bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out ReadOnlyMemory<byte> request)
         {
             // Look for a EOL in the buffer.
             SequencePosition? charPos = buffer.PositionOf((byte)'\n');
@@ -104,21 +92,25 @@ namespace Common
 
             // Skip the request + the \n.
             SequencePosition seqPos = buffer.GetPosition(1, charPos.Value);
-            request = buffer.Slice(0, seqPos);
+            request = buffer.Slice(0, seqPos).ToArray();
             buffer = buffer.Slice(seqPos);
             return true;
         }
 
-        private static bool TryProcessRequest(in ReadOnlySequence<byte> request, out ReadOnlyMemory<byte> response)
+        private async Task ProcessRequestAsync(ReadOnlyMemory<byte> request)
         {
-            if (request.Equals(default))
-            {
-                response = default;
-                return false;
-            }
-            
-            response = request.ToArray();
-            return true;
+            var callbackEndPoint = new IPEndPoint(IPAddress.Loopback, 3434);
+            var response = request;
+
+            if (_registeredHandlers.TryGetValue(request.GetType(), out Delegate handler))
+                handler?.DynamicInvoke(response);
+
+            if (callbackEndPoint == null) return;
+
+            var callbackClient = _callbackClients.GetOrAdd(
+                callbackEndPoint, new Client(callbackEndPoint));
+
+            await callbackClient.PostAsync(response.ToArray(), null);
         }
     }
 }
