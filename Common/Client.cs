@@ -19,7 +19,7 @@ namespace Common
             var remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             remoteSocket.Connect(remoteEndPoint);
 
-            _remoteStream = new NetworkStream(remoteSocket);
+            _remoteStream = new BufferedStream(new NetworkStream(remoteSocket));
 
             _callbackEndPoint = callbackEndPoint;
             _formatter = formatter ?? new DefaultFormatter();
