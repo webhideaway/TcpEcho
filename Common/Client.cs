@@ -62,7 +62,7 @@ namespace Common
         public async Task<TResponse> PostAsync<TRequest, TResponse>(TRequest request)
         {
             var raw = _formatter.Serialize<TRequest>(request);
-            var input = Message.Create<TRequest>(raw);
+            var input = Message.Create<TRequest>(raw, _callbackEndPoint);
 
             var response = default(TResponse);
             void handler(Message output)

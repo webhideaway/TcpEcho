@@ -89,7 +89,7 @@ namespace Common
 
         private bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
-            SequencePosition? eomPos  = buffer.PositionOf(Convert.ToByte(ConsoleKey.Escape));
+            SequencePosition? eomPos = buffer.PositionOf(Convert.ToByte(ConsoleKey.Escape));
             if (eomPos == null)
             {
                 message = default;
