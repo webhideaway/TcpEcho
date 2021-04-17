@@ -7,7 +7,7 @@ namespace Common
     [ZeroFormattable]
     public struct Message
     {
-        private Message(
+        public Message(
             string id = null,
             string type = null,
             byte[] address = null,
