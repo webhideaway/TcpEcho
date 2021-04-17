@@ -4,9 +4,6 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net461|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>

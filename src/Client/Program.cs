@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace TcpEcho
@@ -13,7 +12,7 @@ namespace TcpEcho
                 new IPEndPoint(IPAddress.Loopback, 1212),
                 new IPEndPoint(IPAddress.Loopback, 3434));
 
-            while(true)
+            while (true)
                 await client.PostAsync<string, string>(Console.ReadLine());
         }
     }

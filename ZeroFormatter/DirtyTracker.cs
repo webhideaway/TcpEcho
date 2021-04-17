@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace ZeroFormatter
+﻿namespace ZeroFormatter
 {
     // Note:Can we change to struct? like CancellationTokenSource, CreateLinkedTokenSource...
 

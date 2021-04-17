@@ -1,6 +1,6 @@
 ﻿using System;
-using ZeroFormatter.Internal;
 using System.Collections.Generic;
+using ZeroFormatter.Internal;
 
 namespace ZeroFormatter.Comparers
 {

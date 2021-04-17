@@ -18,9 +18,9 @@ namespace Common
         {
             var remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             remoteSocket.Connect(remoteEndPoint);
-         
+
             _remoteStream = new NetworkStream(remoteSocket);
-           
+
             _callbackEndPoint = callbackEndPoint;
             _formatter = formatter ?? new DefaultFormatter();
         }
@@ -44,9 +44,9 @@ namespace Common
 
         private async Task PostAsync(Message message, Action<Message> handler = null)
         {
-             await Task.WhenAll(
-                 PostTask(message), 
-                 CallbackTask(handler));
+            await Task.WhenAll(
+                PostTask(message),
+                CallbackTask(handler));
         }
 
         public async Task PostAsync<TData>(TData data)

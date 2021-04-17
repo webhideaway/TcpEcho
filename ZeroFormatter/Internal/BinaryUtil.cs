@@ -144,7 +144,7 @@ namespace ZeroFormatter.Internal
         {
             return bytes[offset];
         }
-        
+
 #if !UNITY
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
@@ -164,7 +164,7 @@ namespace ZeroFormatter.Internal
             Buffer.BlockCopy(bytes, offset, dest, 0, count);
             return dest;
         }
-        
+
 #if !UNITY
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif

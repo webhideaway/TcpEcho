@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Reflection;
-using System.Linq;
-using ZeroFormatter.Internal;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using ZeroFormatter.Internal;
 
 namespace ZeroFormatter.Comparers
 {

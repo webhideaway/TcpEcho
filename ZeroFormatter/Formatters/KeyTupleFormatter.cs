@@ -1,5 +1,4 @@
-﻿using System;
-using ZeroFormatter.Internal;
+﻿using ZeroFormatter.Internal;
 
 namespace ZeroFormatter.Formatters
 {
@@ -12,13 +11,13 @@ namespace ZeroFormatter.Formatters
         where TTypeResolver : ITypeResolver, new()
     {
         readonly Formatter<TTypeResolver, T1> formatter1;
-        
+
 
         [Preserve]
         public KeyTupleFormatter()
         {
             this.formatter1 = Formatter<TTypeResolver, T1>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -26,7 +25,7 @@ namespace ZeroFormatter.Formatters
             get
             {
                 return formatter1.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -61,13 +60,13 @@ namespace ZeroFormatter.Formatters
         where TTypeResolver : ITypeResolver, new()
     {
         readonly Formatter<TTypeResolver, T1> formatter1;
-       
+
 
         [Preserve]
         public NullableKeyTupleFormatter()
         {
             this.formatter1 = Formatter<TTypeResolver, T1>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -75,7 +74,7 @@ namespace ZeroFormatter.Formatters
             get
             {
                 return formatter1.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -106,7 +105,7 @@ namespace ZeroFormatter.Formatters
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
             if (!hasValue) return null;
-            
+
             offset += 1;
             int size;
 
@@ -125,14 +124,14 @@ namespace ZeroFormatter.Formatters
     {
         readonly Formatter<TTypeResolver, T1> formatter1;
         readonly Formatter<TTypeResolver, T2> formatter2;
-        
+
 
         [Preserve]
         public KeyTupleFormatter()
         {
             this.formatter1 = Formatter<TTypeResolver, T1>.Default;
             this.formatter2 = Formatter<TTypeResolver, T2>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -141,7 +140,7 @@ namespace ZeroFormatter.Formatters
             {
                 return formatter1.NoUseDirtyTracker
                     && formatter2.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -181,14 +180,14 @@ namespace ZeroFormatter.Formatters
     {
         readonly Formatter<TTypeResolver, T1> formatter1;
         readonly Formatter<TTypeResolver, T2> formatter2;
-       
+
 
         [Preserve]
         public NullableKeyTupleFormatter()
         {
             this.formatter1 = Formatter<TTypeResolver, T1>.Default;
             this.formatter2 = Formatter<TTypeResolver, T2>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -197,7 +196,7 @@ namespace ZeroFormatter.Formatters
             {
                 return formatter1.NoUseDirtyTracker
                     && formatter2.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -229,7 +228,7 @@ namespace ZeroFormatter.Formatters
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
             if (!hasValue) return null;
-            
+
             offset += 1;
             int size;
 
@@ -252,7 +251,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T1> formatter1;
         readonly Formatter<TTypeResolver, T2> formatter2;
         readonly Formatter<TTypeResolver, T3> formatter3;
-        
+
 
         [Preserve]
         public KeyTupleFormatter()
@@ -260,7 +259,7 @@ namespace ZeroFormatter.Formatters
             this.formatter1 = Formatter<TTypeResolver, T1>.Default;
             this.formatter2 = Formatter<TTypeResolver, T2>.Default;
             this.formatter3 = Formatter<TTypeResolver, T3>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -270,7 +269,7 @@ namespace ZeroFormatter.Formatters
                 return formatter1.NoUseDirtyTracker
                     && formatter2.NoUseDirtyTracker
                     && formatter3.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -315,7 +314,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T1> formatter1;
         readonly Formatter<TTypeResolver, T2> formatter2;
         readonly Formatter<TTypeResolver, T3> formatter3;
-       
+
 
         [Preserve]
         public NullableKeyTupleFormatter()
@@ -323,7 +322,7 @@ namespace ZeroFormatter.Formatters
             this.formatter1 = Formatter<TTypeResolver, T1>.Default;
             this.formatter2 = Formatter<TTypeResolver, T2>.Default;
             this.formatter3 = Formatter<TTypeResolver, T3>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -333,7 +332,7 @@ namespace ZeroFormatter.Formatters
                 return formatter1.NoUseDirtyTracker
                     && formatter2.NoUseDirtyTracker
                     && formatter3.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -366,7 +365,7 @@ namespace ZeroFormatter.Formatters
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
             if (!hasValue) return null;
-            
+
             offset += 1;
             int size;
 
@@ -393,7 +392,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T2> formatter2;
         readonly Formatter<TTypeResolver, T3> formatter3;
         readonly Formatter<TTypeResolver, T4> formatter4;
-        
+
 
         [Preserve]
         public KeyTupleFormatter()
@@ -402,7 +401,7 @@ namespace ZeroFormatter.Formatters
             this.formatter2 = Formatter<TTypeResolver, T2>.Default;
             this.formatter3 = Formatter<TTypeResolver, T3>.Default;
             this.formatter4 = Formatter<TTypeResolver, T4>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -413,7 +412,7 @@ namespace ZeroFormatter.Formatters
                     && formatter2.NoUseDirtyTracker
                     && formatter3.NoUseDirtyTracker
                     && formatter4.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -463,7 +462,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T2> formatter2;
         readonly Formatter<TTypeResolver, T3> formatter3;
         readonly Formatter<TTypeResolver, T4> formatter4;
-       
+
 
         [Preserve]
         public NullableKeyTupleFormatter()
@@ -472,7 +471,7 @@ namespace ZeroFormatter.Formatters
             this.formatter2 = Formatter<TTypeResolver, T2>.Default;
             this.formatter3 = Formatter<TTypeResolver, T3>.Default;
             this.formatter4 = Formatter<TTypeResolver, T4>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -483,7 +482,7 @@ namespace ZeroFormatter.Formatters
                     && formatter2.NoUseDirtyTracker
                     && formatter3.NoUseDirtyTracker
                     && formatter4.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -516,8 +515,19 @@ namespace ZeroFormatter.Formatters
         {
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
+
+/* Unmerged change from project 'ZeroFormatter (netcoreapp2.1)'
+Before:
             if (!hasValue) return null;
             
+            offset += 1;
+After:
+            if (!hasValue) return null;
+
+            offset += 1;
+*/
+            if (!hasValue) return null;
+
             offset += 1;
             int size;
 
@@ -548,7 +558,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T3> formatter3;
         readonly Formatter<TTypeResolver, T4> formatter4;
         readonly Formatter<TTypeResolver, T5> formatter5;
-        
+
 
         [Preserve]
         public KeyTupleFormatter()
@@ -558,7 +568,7 @@ namespace ZeroFormatter.Formatters
             this.formatter3 = Formatter<TTypeResolver, T3>.Default;
             this.formatter4 = Formatter<TTypeResolver, T4>.Default;
             this.formatter5 = Formatter<TTypeResolver, T5>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -570,7 +580,7 @@ namespace ZeroFormatter.Formatters
                     && formatter3.NoUseDirtyTracker
                     && formatter4.NoUseDirtyTracker
                     && formatter5.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -625,7 +635,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T3> formatter3;
         readonly Formatter<TTypeResolver, T4> formatter4;
         readonly Formatter<TTypeResolver, T5> formatter5;
-       
+
 
         [Preserve]
         public NullableKeyTupleFormatter()
@@ -635,7 +645,7 @@ namespace ZeroFormatter.Formatters
             this.formatter3 = Formatter<TTypeResolver, T3>.Default;
             this.formatter4 = Formatter<TTypeResolver, T4>.Default;
             this.formatter5 = Formatter<TTypeResolver, T5>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -647,7 +657,7 @@ namespace ZeroFormatter.Formatters
                     && formatter3.NoUseDirtyTracker
                     && formatter4.NoUseDirtyTracker
                     && formatter5.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -682,7 +692,7 @@ namespace ZeroFormatter.Formatters
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
             if (!hasValue) return null;
-            
+
             offset += 1;
             int size;
 
@@ -717,7 +727,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T4> formatter4;
         readonly Formatter<TTypeResolver, T5> formatter5;
         readonly Formatter<TTypeResolver, T6> formatter6;
-        
+
 
         [Preserve]
         public KeyTupleFormatter()
@@ -728,7 +738,7 @@ namespace ZeroFormatter.Formatters
             this.formatter4 = Formatter<TTypeResolver, T4>.Default;
             this.formatter5 = Formatter<TTypeResolver, T5>.Default;
             this.formatter6 = Formatter<TTypeResolver, T6>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -741,7 +751,7 @@ namespace ZeroFormatter.Formatters
                     && formatter4.NoUseDirtyTracker
                     && formatter5.NoUseDirtyTracker
                     && formatter6.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -801,7 +811,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T4> formatter4;
         readonly Formatter<TTypeResolver, T5> formatter5;
         readonly Formatter<TTypeResolver, T6> formatter6;
-       
+
 
         [Preserve]
         public NullableKeyTupleFormatter()
@@ -812,7 +822,7 @@ namespace ZeroFormatter.Formatters
             this.formatter4 = Formatter<TTypeResolver, T4>.Default;
             this.formatter5 = Formatter<TTypeResolver, T5>.Default;
             this.formatter6 = Formatter<TTypeResolver, T6>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -825,7 +835,7 @@ namespace ZeroFormatter.Formatters
                     && formatter4.NoUseDirtyTracker
                     && formatter5.NoUseDirtyTracker
                     && formatter6.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -861,7 +871,7 @@ namespace ZeroFormatter.Formatters
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
             if (!hasValue) return null;
-            
+
             offset += 1;
             int size;
 
@@ -900,7 +910,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T5> formatter5;
         readonly Formatter<TTypeResolver, T6> formatter6;
         readonly Formatter<TTypeResolver, T7> formatter7;
-        
+
 
         [Preserve]
         public KeyTupleFormatter()
@@ -912,7 +922,7 @@ namespace ZeroFormatter.Formatters
             this.formatter5 = Formatter<TTypeResolver, T5>.Default;
             this.formatter6 = Formatter<TTypeResolver, T6>.Default;
             this.formatter7 = Formatter<TTypeResolver, T7>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -926,7 +936,7 @@ namespace ZeroFormatter.Formatters
                     && formatter5.NoUseDirtyTracker
                     && formatter6.NoUseDirtyTracker
                     && formatter7.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -991,7 +1001,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T5> formatter5;
         readonly Formatter<TTypeResolver, T6> formatter6;
         readonly Formatter<TTypeResolver, T7> formatter7;
-       
+
 
         [Preserve]
         public NullableKeyTupleFormatter()
@@ -1003,7 +1013,7 @@ namespace ZeroFormatter.Formatters
             this.formatter5 = Formatter<TTypeResolver, T5>.Default;
             this.formatter6 = Formatter<TTypeResolver, T6>.Default;
             this.formatter7 = Formatter<TTypeResolver, T7>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -1017,7 +1027,7 @@ namespace ZeroFormatter.Formatters
                     && formatter5.NoUseDirtyTracker
                     && formatter6.NoUseDirtyTracker
                     && formatter7.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -1054,7 +1064,7 @@ namespace ZeroFormatter.Formatters
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
             if (!hasValue) return null;
-            
+
             offset += 1;
             int size;
 
@@ -1097,7 +1107,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T6> formatter6;
         readonly Formatter<TTypeResolver, T7> formatter7;
         readonly Formatter<TTypeResolver, TRest> formatter8;
-        
+
 
         [Preserve]
         public KeyTupleFormatter()
@@ -1110,7 +1120,7 @@ namespace ZeroFormatter.Formatters
             this.formatter6 = Formatter<TTypeResolver, T6>.Default;
             this.formatter7 = Formatter<TTypeResolver, T7>.Default;
             this.formatter8 = Formatter<TTypeResolver, TRest>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -1125,7 +1135,7 @@ namespace ZeroFormatter.Formatters
                     && formatter6.NoUseDirtyTracker
                     && formatter7.NoUseDirtyTracker
                     && formatter8.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -1195,7 +1205,7 @@ namespace ZeroFormatter.Formatters
         readonly Formatter<TTypeResolver, T6> formatter6;
         readonly Formatter<TTypeResolver, T7> formatter7;
         readonly Formatter<TTypeResolver, TRest> formatter8;
-       
+
 
         [Preserve]
         public NullableKeyTupleFormatter()
@@ -1208,7 +1218,7 @@ namespace ZeroFormatter.Formatters
             this.formatter6 = Formatter<TTypeResolver, T6>.Default;
             this.formatter7 = Formatter<TTypeResolver, T7>.Default;
             this.formatter8 = Formatter<TTypeResolver, TRest>.Default;
-   
+
         }
 
         public override bool NoUseDirtyTracker
@@ -1223,7 +1233,7 @@ namespace ZeroFormatter.Formatters
                     && formatter6.NoUseDirtyTracker
                     && formatter7.NoUseDirtyTracker
                     && formatter8.NoUseDirtyTracker
-        
+
                 ;
             }
         }
@@ -1261,7 +1271,7 @@ namespace ZeroFormatter.Formatters
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
             if (!hasValue) return null;
-            
+
             offset += 1;
             int size;
 

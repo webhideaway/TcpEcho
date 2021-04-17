@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Reflection;
-using System.Linq;
 using ZeroFormatter.Formatters;
 using ZeroFormatter.Internal;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace ZeroFormatter.Segments
 {

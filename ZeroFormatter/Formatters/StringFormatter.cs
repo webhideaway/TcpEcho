@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using ZeroFormatter.Internal;
-using ZeroFormatter.Segments;
 
 namespace ZeroFormatter.Formatters
 {

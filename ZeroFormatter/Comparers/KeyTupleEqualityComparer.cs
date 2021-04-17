@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using ZeroFormatter.Comparers;
+﻿using System.Collections.Generic;
 
 namespace ZeroFormatter.Comparers
 {

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
-using ZeroFormatter.Comparers;
-using ZeroFormatter.Internal;
 using ZeroFormatter.Segments;
 
 namespace ZeroFormatter.Formatters

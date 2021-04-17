@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using ZeroFormatter.Internal;
+﻿using ZeroFormatter.Internal;
 using ZeroFormatter.Segments;
 
 namespace ZeroFormatter.Formatters

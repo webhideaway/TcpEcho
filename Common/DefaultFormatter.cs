@@ -1,44 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading.Tasks;
+using ZeroFormatter;
 
 namespace Common
 {
     public class DefaultFormatter : IFormatter
     {
-        private BinaryFormatter _binaryFormatter = new BinaryFormatter();
-
         public T Deserialize<T>(byte[] data)
         {
-            using (MemoryStream memoryStream = new MemoryStream(data))
-            {
-                memoryStream.Position = 0;
-                return (T)_binaryFormatter.Deserialize(memoryStream);
-            }
+            return ZeroFormatterSerializer.Deserialize<T>(data);
         }
 
         public object Deserialize(Type type, byte[] data)
         {
-            using (MemoryStream memoryStream = new MemoryStream(data))
-            {
-                memoryStream.Position = 0;
-                var value = _binaryFormatter.Deserialize(memoryStream);
-                return Convert.ChangeType(value, type);
-            }
+            return ZeroFormatterSerializer.NonGeneric.Deserialize(type, data);
         }
 
         public byte[] Serialize<T>(T value)
         {
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                _binaryFormatter.Serialize(memoryStream, value);
-                memoryStream.Position = 0;
-                return memoryStream.ToArray();
-            }
+            return ZeroFormatterSerializer.Serialize<T>(value);
         }
     }
 }

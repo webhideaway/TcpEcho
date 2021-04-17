@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+using ZeroFormatter;
 
 namespace Common
 {
-    [Serializable]
+    [ZeroFormattable]
     public struct Message
     {
         private Message(
@@ -24,10 +21,19 @@ namespace Common
             Raw = raw;
         }
 
+        [Index(0)]
         public readonly string Id;
+
+        [Index(1)]
         public readonly string Type;
+
+        [Index(2)]
         public readonly byte[] Address;
+
+        [Index(3)]
         public readonly int Port;
+
+        [Index(4)]
         public readonly byte[] Raw;
 
         public static Message Create<T>(byte[] raw, IPEndPoint endPoint = null)
