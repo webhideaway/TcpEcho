@@ -89,17 +89,17 @@ namespace Common
 
         private bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
-            var size = Marshal.SizeOf(typeof(Message));
-            if (buffer.Length < size)
+            SequencePosition? eomPos  = buffer.PositionOf(Convert.ToByte(ConsoleKey.Escape));
+            if (eomPos == null)
             {
                 message = default;
                 return false;
             }
 
-            var input = buffer.Slice(0, size).ToArray();
+            var input = buffer.Slice(0, eomPos.Value).ToArray();
             message = _formatter.Deserialize<Message>(input);
 
-            buffer = buffer.Slice(size);
+            buffer = buffer.Slice(eomPos.Value);
             return true;
         }
 

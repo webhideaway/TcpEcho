@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using ZeroFormatter.Internal;
 
 namespace Common
 {
@@ -28,6 +29,8 @@ namespace Common
         private Task PostTask(Message message)
         {
             var data = _formatter.Serialize<Message>(message);
+            BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
+
             return _remoteStream.WriteAsync(data, 0, data.Length);
         }
 
