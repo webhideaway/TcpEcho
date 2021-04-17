@@ -9,41 +9,56 @@ namespace Common
     {
         public Message(
             string id = null,
-            string type = null,
-            byte[] address = null,
-            int port = 0,
-            byte[] raw = null)
+            string requestType = null,
+            string responseType = null,
+            byte[] callbackAddress = null,
+            int callbackPort = 0,
+            byte[] rawData = null)
         {
             Id = id;
-            Type = type;
-            Address = address;
-            Port = port;
-            Raw = raw;
+            RequestType = requestType;
+            ResponseType = responseType;
+            CallbackAddress = callbackAddress;
+            CallbackPort = callbackPort;
+            RawData = rawData;
         }
 
         [Index(0)]
         public readonly string Id;
 
         [Index(1)]
-        public readonly string Type;
+        public readonly string RequestType;
 
         [Index(2)]
-        public readonly byte[] Address;
+        public readonly string ResponseType;
 
         [Index(3)]
-        public readonly int Port;
+        public readonly byte[] CallbackAddress;
 
         [Index(4)]
-        public readonly byte[] Raw;
+        public readonly int CallbackPort;
 
-        public static Message Create<T>(byte[] raw, IPEndPoint endPoint = null)
+        [Index(5)]
+        public readonly byte[] RawData;
+
+        public static Message Create<TRequest>(byte[] rawData)
         {
             return new Message(
                 id: Guid.NewGuid().ToString(),
-                type: typeof(T).FullName,
-                address: endPoint?.Address.GetAddressBytes(),
-                port: endPoint == null ? default : endPoint.Port,
-                raw: raw
+                requestType: typeof(TRequest).FullName,
+                rawData: rawData
+            );
+        }
+
+        public static Message Create<TRequest, TResponse>(byte[] rawData, IPEndPoint callbackEndPoint)
+        {
+            return new Message(
+                id: Guid.NewGuid().ToString(),
+                requestType: typeof(TRequest).FullName,
+                responseType: typeof(TResponse).FullName,
+                callbackAddress: callbackEndPoint.Address.GetAddressBytes(),
+                callbackPort: callbackEndPoint.Port,
+                rawData: rawData
             );
         }
     }

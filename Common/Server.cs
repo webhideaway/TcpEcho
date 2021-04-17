@@ -105,7 +105,7 @@ namespace Common
 
         private async Task ProcessMessageAsync(Message message)
         {
-            var request = _formatter.Deserialize(Type.GetType(message.Type), message.Raw);
+            var request = _formatter.Deserialize(Type.GetType(message.RequestType), message.RawData);
             var responses = new object[] { };
 
             if (_registeredHandlers.TryGetValue(request.GetType(), out Delegate handlers))
@@ -114,10 +114,10 @@ namespace Common
 
             IPEndPoint callbackEndPoint = null;
 
-            if (message.Address != null && message.Port > 0)
+            if (message.CallbackAddress != null && message.CallbackPort > 0)
             {
-                var callbackAddress = new IPAddress(message.Address);
-                callbackEndPoint = new IPEndPoint(callbackAddress, message.Port);
+                var callbackAddress = new IPAddress(message.CallbackAddress);
+                callbackEndPoint = new IPEndPoint(callbackAddress, message.CallbackPort);
             }
 
             if (callbackEndPoint == null) return;
@@ -128,7 +128,7 @@ namespace Common
             foreach (var response in responses)
             {
                 if (response == null) continue;
-                var output = _formatter.Serialize(response);
+                var output = _formatter.Serialize(Type.GetType(message.ResponseType), response);
                 await callbackClient.PostAsync(output);
             }
         }

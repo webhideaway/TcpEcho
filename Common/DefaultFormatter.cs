@@ -19,5 +19,10 @@ namespace Common
         {
             return ZeroFormatterSerializer.Serialize<T>(value);
         }
+
+        public byte[] Serialize(Type type, object value)
+        {
+            return ZeroFormatterSerializer.NonGeneric.Serialize(type, value);
+        }
     }
 }
