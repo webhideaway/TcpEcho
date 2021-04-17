@@ -13,7 +13,7 @@ namespace TcpEcho
                 new IPEndPoint(IPAddress.Loopback, 3434));
 
             while (true)
-                Console.WriteLine(await client.PostAsync<string, string>(Console.ReadLine()));
+                await client.PostAsync<string, string>(Console.ReadLine());
         }
     }
 }

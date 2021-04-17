@@ -40,7 +40,7 @@ namespace Common
         {
             return new Message(
                 id: Guid.NewGuid().ToString(),
-                type: typeof(T).Name,
+                type: typeof(T).FullName,
                 address: endPoint?.Address.GetAddressBytes(),
                 port: endPoint == null ? default : endPoint.Port,
                 raw: raw
