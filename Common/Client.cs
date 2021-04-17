@@ -40,7 +40,7 @@ namespace Common
             if (handler == null) return Task.CompletedTask;
 
             _callbackListener = new Lazy<Server>(
-                () => new Server(_callbackEndPoint));
+                () => new Server(_callbackEndPoint, formatter: _formatter));
 
             _callbackListener.Value.RegisterHandler(handler);
             return _callbackListener.Value.ListenAsync();

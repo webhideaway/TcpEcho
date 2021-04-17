@@ -124,7 +124,7 @@ namespace Common
             if (callbackEndPoint == null) return;
 
             var callbackClient = _callbackClients.GetOrAdd(
-                callbackEndPoint, new Client(callbackEndPoint));
+                callbackEndPoint, new Client(callbackEndPoint, formatter: _formatter));
 
             foreach (var response in responses)
             {

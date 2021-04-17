@@ -38,13 +38,7 @@ namespace Common
 
         public static Message Create<TRequest>(byte[] rawData, IPEndPoint callbackEndPoint = null)
         {
-            return new Message(
-                id: Guid.NewGuid().ToString(),
-                requestType: typeof(TRequest).FullName,
-                callbackAddress: callbackEndPoint?.Address.GetAddressBytes(),
-                callbackPort: callbackEndPoint?.Port ?? 0,
-                rawData: rawData
-            );
+            return Create(typeof(TRequest), rawData, callbackEndPoint);
         }
 
         public static Message Create(Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
