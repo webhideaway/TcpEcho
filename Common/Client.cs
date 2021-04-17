@@ -17,11 +17,9 @@ namespace Common
         public Client(EndPoint remoteEndPoint, EndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
             var remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            Console.WriteLine($"Connecting to remote end point {remoteEndPoint}");
-
             remoteSocket.Connect(remoteEndPoint);
-            _remoteStream = new NetworkStream(remoteSocket);
             
+            _remoteStream = new NetworkStream(remoteSocket);
             _callbackEndPoint = callbackEndPoint;
             _formatter = formatter ?? new DefaultFormatter();
         }

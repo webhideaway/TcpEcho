@@ -24,8 +24,6 @@ namespace Common
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(listenEndPoint);
 
-            Console.WriteLine($"Listening on local end point {listenEndPoint}");
-
             _listenSocket.Listen(120);
             _formatter = formatter ?? new DefaultFormatter();
         }
