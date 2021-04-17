@@ -11,10 +11,8 @@ namespace Common
     {
         byte[] Serialize<T>(T value);
 
-        void Serialize<T>(T value, Stream stream);
-
         T Deserialize<T>(byte[] data);
 
-        T Deserialize<T>(Stream stream);
+        object Deserialize(Type type, byte[] data);
     }
 }

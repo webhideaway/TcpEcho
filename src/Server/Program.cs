@@ -12,9 +12,11 @@ namespace TcpEcho
             var server = new Common.Server(
                 new IPEndPoint(IPAddress.Loopback, 1212));
 
-            server.RegisterHandler<ReadOnlyMemory<byte>>(data =>
-                Console.Write(Encoding.UTF8.GetString(data.ToArray())));
-            
+            //server.RegisterHandler<ReadOnlyMemory<byte>>(data =>
+            //    Console.Write(Encoding.UTF8.GetString(data.ToArray())));
+
+            server.RegisterHandler<string, string>(data => data);
+
             await server.ListenAsync();
         }
     }

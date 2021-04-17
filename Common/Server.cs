@@ -5,6 +5,7 @@ using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Common
@@ -14,18 +15,27 @@ namespace Common
         private readonly Socket _listenSocket;
         private readonly IFormatter _formatter;
 
-        private readonly ConcurrentDictionary<EndPoint, Client> _callbackClients
-            = new ConcurrentDictionary<EndPoint, Client>();
+        private readonly ConcurrentDictionary<IPEndPoint, Client> _callbackClients
+            = new ConcurrentDictionary<IPEndPoint, Client>();
         private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers
             = new ConcurrentDictionary<Type, Delegate>();
 
-        public Server(EndPoint listenEndPoint, IFormatter formatter = null)
+        public Server(IPEndPoint listenEndPoint, IFormatter formatter = null)
         {
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(listenEndPoint);
 
             _listenSocket.Listen(120);
             _formatter = formatter ?? new DefaultFormatter();
+        }
+
+        public void RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler)
+        {
+            _registeredHandlers.AddOrUpdate(typeof(TRequest), handler, (k, v) =>
+            {
+                return v.GetInvocationList().Contains(handler)
+                    ? v : Delegate.Combine(v, handler);
+            });
         }
 
         public void RegisterHandler<TData>(Action<TData> handler)
@@ -57,10 +67,10 @@ namespace Common
                 ReadResult result = await reader.ReadAsync();
                 ReadOnlySequence<byte> buffer = result.Buffer;
 
-                while (TryReadRequest(ref buffer, out ReadOnlyMemory<byte> request))
+                while (TryReadMessage(ref buffer, out Message message))
                 {
-                    // Process the request.
-                    await ProcessRequestAsync(request);
+                    // Process the message.
+                    await ProcessMessageAsync(message);
                 }
 
                 // Tell the PipeReader how much of the buffer has been consumed.
@@ -77,38 +87,50 @@ namespace Common
             await reader.CompleteAsync();
         }
 
-        private bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out ReadOnlyMemory<byte> request)
+        private bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
-            // Look for a EOL in the buffer.
-            SequencePosition? charPos = buffer.PositionOf((byte)'\n');
-
-            if (charPos == null)
+            var size = Marshal.SizeOf(typeof(Message));
+            if (buffer.Length < size)
             {
-                request = default;
+                message = default;
                 return false;
             }
 
-            // Skip the request + the \n.
-            SequencePosition seqPos = buffer.GetPosition(1, charPos.Value);
-            request = buffer.Slice(0, seqPos).ToArray();
-            buffer = buffer.Slice(seqPos);
+            var input = buffer.Slice(0, size).ToArray();
+            message = _formatter.Deserialize<Message>(input);
+
+            buffer = buffer.Slice(size);
             return true;
         }
 
-        private async Task ProcessRequestAsync(ReadOnlyMemory<byte> request)
+        private async Task ProcessMessageAsync(Message message)
         {
-            var callbackEndPoint = new IPEndPoint(IPAddress.Loopback, 3434);
-            var response = request;
+            var request = _formatter.Deserialize(Type.GetType(message.Type), message.Raw);
+            var responses = new object[] { };
 
-            if (_registeredHandlers.TryGetValue(request.GetType(), out Delegate handler))
-                handler?.DynamicInvoke(response);
+            if (_registeredHandlers.TryGetValue(request.GetType(), out Delegate handlers))
+                responses = await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
+                    Task.Factory.StartNew(() => handler.DynamicInvoke(request))));
+
+            IPEndPoint callbackEndPoint = null;
+
+            if (message.Address != null && message.Port > 0)
+            {
+                var callbackAddress = new IPAddress(message.Address);
+                callbackEndPoint = new IPEndPoint(callbackAddress, message.Port);
+            }
 
             if (callbackEndPoint == null) return;
 
             var callbackClient = _callbackClients.GetOrAdd(
                 callbackEndPoint, new Client(callbackEndPoint));
 
-            await callbackClient.PostAsync(response.ToArray(), null);
+            foreach (var response in responses)
+            {
+                if (response == null) continue;
+                var output = _formatter.Serialize(response);
+                await callbackClient.PostAsync(output);
+            }
         }
     }
 }
