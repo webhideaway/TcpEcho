@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using ZeroFormatter;
 
 namespace Common
 {
@@ -97,7 +98,7 @@ namespace Common
             }
 
             var input = buffer.Slice(0, eomPos.Value).ToArray();
-            message = _formatter.Deserialize<Message>(input);
+            message = ZeroFormatterSerializer.Deserialize<Message>(input);
 
             buffer = buffer.Slice(eomPos.Value);
             return true;
@@ -128,7 +129,9 @@ namespace Common
             foreach (var response in responses)
             {
                 if (response == null) continue;
-                var output = _formatter.Serialize(Type.GetType(message.ResponseType), response);
+                var data = _formatter.Serialize(response.GetType(), response);
+
+                var output = Message.Create(response.GetType(), data);
                 await callbackClient.PostAsync(output);
             }
         }

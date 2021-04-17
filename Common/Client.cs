@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using ZeroFormatter;
 using ZeroFormatter.Internal;
 
 namespace Common
@@ -28,7 +29,7 @@ namespace Common
 
         private Task PostTask(Message message)
         {
-            var data = _formatter.Serialize<Message>(message);
+            var data = ZeroFormatterSerializer.Serialize<Message>(message);
             BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
 
             return _remoteStream.WriteAsync(data, 0, data.Length);
@@ -62,7 +63,7 @@ namespace Common
         public async Task<TResponse> PostAsync<TRequest, TResponse>(TRequest request)
         {
             var raw = _formatter.Serialize<TRequest>(request);
-            var input = Message.Create<TRequest, TResponse>(raw, _callbackEndPoint);
+            var input = Message.Create<TRequest>(raw, _callbackEndPoint);
 
             var response = default(TResponse);
             void handler(Message output)

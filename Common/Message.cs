@@ -10,14 +10,12 @@ namespace Common
         public Message(
             string id = null,
             string requestType = null,
-            string responseType = null,
             byte[] callbackAddress = null,
             int callbackPort = 0,
             byte[] rawData = null)
         {
             Id = id;
             RequestType = requestType;
-            ResponseType = responseType;
             CallbackAddress = callbackAddress;
             CallbackPort = callbackPort;
             RawData = rawData;
@@ -30,34 +28,32 @@ namespace Common
         public readonly string RequestType;
 
         [Index(2)]
-        public readonly string ResponseType;
-
-        [Index(3)]
         public readonly byte[] CallbackAddress;
 
-        [Index(4)]
+        [Index(3)]
         public readonly int CallbackPort;
 
-        [Index(5)]
+        [Index(4)]
         public readonly byte[] RawData;
 
-        public static Message Create<TRequest>(byte[] rawData)
+        public static Message Create<TRequest>(byte[] rawData, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
                 id: Guid.NewGuid().ToString(),
                 requestType: typeof(TRequest).FullName,
+                callbackAddress: callbackEndPoint?.Address.GetAddressBytes(),
+                callbackPort: callbackEndPoint?.Port ?? 0,
                 rawData: rawData
             );
         }
 
-        public static Message Create<TRequest, TResponse>(byte[] rawData, IPEndPoint callbackEndPoint)
+        public static Message Create(Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
                 id: Guid.NewGuid().ToString(),
-                requestType: typeof(TRequest).FullName,
-                responseType: typeof(TResponse).FullName,
-                callbackAddress: callbackEndPoint.Address.GetAddressBytes(),
-                callbackPort: callbackEndPoint.Port,
+                requestType: type.FullName,
+                callbackAddress: callbackEndPoint?.Address.GetAddressBytes(),
+                callbackPort: callbackEndPoint?.Port ?? 0,
                 rawData: rawData
             );
         }
