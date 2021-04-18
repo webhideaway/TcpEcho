@@ -57,14 +57,14 @@ namespace Common
         {
             var raw = _formatter.Serialize<TData>(data);
             var message = Message.Create<TData>(raw);
-            await PostAsync(message);
+            await PostAsync(message, null);
         }
 
         internal async Task PostAsync(Type type, object data)
         {
             var raw = _formatter.Serialize(type, data);
             var message = Message.Create(type, raw);
-            await PostAsync(message);
+            await PostAsync(message, null);
         }
 
         public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
