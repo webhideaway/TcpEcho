@@ -60,19 +60,12 @@ namespace Common
             await PostAsync(message);
         }
 
-        public async Task<TResponse> PostAsync<TRequest, TResponse>(TRequest request)
+        public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
         {
             var raw = _formatter.Serialize<TRequest>(request);
             var input = Message.Create<TRequest>(raw, _callbackEndPoint);
-
-            var response = default(TResponse);
-            void handler(Message output)
-            {
-                response = _formatter.Deserialize<TResponse>(output.RawData);
-            }
-
-            await PostAsync(input, handler);
-            return response;
+            await PostAsync(input, output => 
+                handler(_formatter.Deserialize<TResponse>(output.RawData)));
         }
     }
 }

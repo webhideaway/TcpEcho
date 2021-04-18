@@ -12,8 +12,8 @@ namespace TcpEcho
                 new IPEndPoint(IPAddress.Loopback, 1212),
                 new IPEndPoint(IPAddress.Loopback, 3434));
 
-            while (true)
-                await client.PostAsync<string, string>(Console.ReadLine());
+            await client.PostAsync<string, string>(
+                Console.ReadLine(), output => Console.WriteLine(output));
         }
     }
 }
