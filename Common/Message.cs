@@ -41,7 +41,7 @@ namespace Common
             return Create(typeof(TRequest), rawData, callbackEndPoint);
         }
 
-        public static Message Create(Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
+        internal static Message Create(Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
                 id: Guid.NewGuid().ToString(),

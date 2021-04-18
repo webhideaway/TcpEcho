@@ -100,7 +100,7 @@ namespace Common
             var input = buffer.Slice(0, eomPos.Value).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(input);
 
-            buffer = buffer.Slice(eomPos.Value);
+            buffer = buffer.Slice(input.Length + 1);
             return true;
         }
 
@@ -129,10 +129,7 @@ namespace Common
             foreach (var response in responses)
             {
                 if (response == null) continue;
-                var data = _formatter.Serialize(response.GetType(), response);
-
-                var output = Message.Create(response.GetType(), data);
-                await callbackClient.PostAsync(output);
+                await callbackClient.PostAsync(response);
             }
         }
     }
