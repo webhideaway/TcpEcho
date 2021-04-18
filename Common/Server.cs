@@ -129,7 +129,7 @@ namespace Common
             foreach (var response in responses)
             {
                 if (response == null) continue;
-                await callbackClient.PostAsync(response);
+                await callbackClient.PostAsync(response.GetType(), response);
             }
         }
     }
