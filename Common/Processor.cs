@@ -27,15 +27,15 @@ namespace Common
                             break;
                         }
 
-                        if (TryParseMessage(ref buffer, out Message message))
+                        if (TryReadMessage(ref buffer, out Message message))
                         {
                             var writer = gettWriter(message);
 
                             try
                             {
-                                FlushResult flushResult = await WriteMessagesAsync(writer, message);
+                                FlushResult[] flushResults = await ProcessMessageAsync(writer, message);
 
-                                if (flushResult.IsCanceled || flushResult.IsCompleted)
+                                if (flushResults.All(flushResult => flushResult.IsCanceled || flushResult.IsCompleted))
                                 {
                                     break;
                                 }
@@ -67,11 +67,11 @@ namespace Common
             }
         }
 
-        protected abstract bool TryParseMessage(
+        protected abstract bool TryReadMessage(
             ref ReadOnlySequence<byte> buffer,
             out Message message);
 
-        protected abstract ValueTask<FlushResult> WriteMessagesAsync(
+        protected abstract Task<FlushResult[]> ProcessMessageAsync(
             PipeWriter writer,
             Message message);
     }

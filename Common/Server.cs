@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
@@ -11,7 +12,7 @@ using ZeroFormatter;
 
 namespace Common
 {
-    public class Server
+    public class Server : Processor
     {
         private readonly Socket _listenSocket;
         private readonly IFormatter _formatter;
@@ -21,7 +22,7 @@ namespace Common
         private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers
             = new ConcurrentDictionary<Type, Delegate>();
 
-        public Server(IPEndPoint listenEndPoint, IFormatter formatter = null)
+        public Server(IPEndPoint listenEndPoint, IFormatter formatter = null) : base()
         {
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(listenEndPoint);
@@ -53,66 +54,15 @@ namespace Common
             while (true)
             {
                 var socket = await _listenSocket.AcceptAsync();
-                await ProcessRequestsAsync(socket);
+                var stream = new NetworkStream(socket);
+                var reader = PipeReader.Create(stream);
+
+                await ProcessMessagesAsync(reader, GetWriter);
             }
         }
 
-        private async Task ProcessRequestsAsync(Socket socket)
+        private Func<Message, PipeWriter> GetWriter = message =>
         {
-            // Create a PipeReader over the network stream
-            var stream = new NetworkStream(socket);
-            var reader = PipeReader.Create(stream);
-
-            while (true)
-            {
-                ReadResult result = await reader.ReadAsync();
-                ReadOnlySequence<byte> buffer = result.Buffer;
-
-                while (TryReadMessage(ref buffer, out Message message))
-                {
-                    // Process the message.
-                    await ProcessMessageAsync(message);
-                }
-
-                // Tell the PipeReader how much of the buffer has been consumed.
-                reader.AdvanceTo(buffer.Start, buffer.End);
-
-                // Stop reading if there's no more data coming.
-                if (result.IsCompleted)
-                {
-                    break;
-                }
-            }
-
-            // Mark the PipeReader as complete.
-            await reader.CompleteAsync();
-        }
-
-        private bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
-        {
-            SequencePosition? eomPos = buffer.PositionOf(Convert.ToByte(ConsoleKey.Escape));
-            if (eomPos == null)
-            {
-                message = default;
-                return false;
-            }
-
-            var input = buffer.Slice(0, eomPos.Value).ToArray();
-            message = ZeroFormatterSerializer.Deserialize<Message>(input);
-
-            buffer = buffer.Slice(input.Length + 1);
-            return true;
-        }
-
-        private async Task ProcessMessageAsync(Message message)
-        {
-            var request = _formatter.Deserialize(Type.GetType(message.RequestType), message.RawData);
-            var responses = new object[] { };
-
-            if (_registeredHandlers.TryGetValue(request.GetType(), out Delegate handlers))
-                responses = await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
-                    Task.Factory.StartNew(() => handler.DynamicInvoke(request))));
-
             IPEndPoint callbackEndPoint = null;
 
             if (message.CallbackAddress != null && message.CallbackPort > 0)
@@ -121,16 +71,58 @@ namespace Common
                 callbackEndPoint = new IPEndPoint(callbackAddress, message.CallbackPort);
             }
 
-            if (callbackEndPoint == null) return;
+            if (callbackEndPoint == null) return default;
 
-            var callbackClient = _callbackClients.GetOrAdd(
-                callbackEndPoint, new Client(callbackEndPoint, formatter: _formatter));
+            var callbackSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            callbackSocket.Connect(callbackEndPoint);
 
-            foreach (var response in responses)
+            var callbackStream = new NetworkStream(callbackSocket);
+            return PipeWriter.Create(callbackStream);
+        };
+
+        protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
+        {
+            SequencePosition? eomPos = buffer.PositionOf(Convert.ToByte(ConsoleKey.Escape));
+            if (eomPos == null)
             {
-                if (response == null) continue;
-                await callbackClient.PostAsync(response.GetType(), response);
+                message = default;
+                return false;
             }
+
+            var raw = buffer.Slice(0, eomPos.Value).ToArray();
+            message = ZeroFormatterSerializer.Deserialize<Message>(raw);
+
+            buffer = buffer.Slice(raw.Length + 1);
+            return true;
+        }
+
+        protected override async Task<FlushResult[]> ProcessMessageAsync(PipeWriter writer, Message message)
+        {
+            var type = Type.GetType(message.RequestType);
+            if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
+            {
+                var request = _formatter.Deserialize(type, message.RawData);
+                await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
+                    {
+                        var task = Task.Factory.StartNew(() => handler.DynamicInvoke(request), TaskCreationOptions.LongRunning);
+                        var success = task.ContinueWith(t => ProcessResponse(writer, t.Result), TaskContinuationOptions.OnlyOnRanToCompletion).Unwrap();
+                        var failed = task.ContinueWith(t => ProcessResponse(writer, t.Exception?.Flatten()?.GetBaseException()), TaskContinuationOptions.NotOnRanToCompletion).Unwrap();
+                        return Task.WhenAny(success, failed).Unwrap();
+                    }
+                ));
+            }
+            return default;
+        }
+
+        private Task<FlushResult> ProcessResponse(PipeWriter writer, object response)
+        {
+            if (writer == null) return default;
+            if (response == null) return default;
+            var type = response.GetType();
+            var raw = _formatter.Serialize(type, response);
+            var message = Message.Create(type, raw);
+            var output = ZeroFormatterSerializer.Serialize<Message>(message);
+            return writer.WriteAsync(output).AsTask();
         }
     }
 }
