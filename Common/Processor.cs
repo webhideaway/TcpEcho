@@ -9,28 +9,15 @@ using System.Threading.Tasks;
 
 namespace Common
 {
-    public class Processor : IProcessor
+    public abstract class Processor : IProcessor
     {
-        private readonly Func<ReadOnlySequence<byte>, Message> _inputHandler;
-        private readonly Func<Message, ReadOnlyMemory<byte>> _outputHandler;
-
-        public Processor(
-            Func<ReadOnlySequence<byte>, Message> inputHandler,
-            Func<Message, ReadOnlyMemory<byte>> outputHandler)
-        {
-            _inputHandler = inputHandler;
-            _outputHandler = outputHandler;
-        }
-
-        public async Task ProcessMessagesAsync(
-            PipeReader inputReader,
-            PipeWriter outputWriter)
+        public async Task ProcessMessagesAsync(PipeReader reader, Func<Message, PipeWriter> gettWriter)
         {
             try
             {
                 while (true)
                 {
-                    ReadResult readResult = await inputReader.ReadAsync();
+                    ReadResult readResult = await reader.ReadAsync();
                     ReadOnlySequence<byte> buffer = readResult.Buffer;
 
                     try
@@ -40,13 +27,22 @@ namespace Common
                             break;
                         }
 
-                        if (TryParseMessage(_inputHandler, ref buffer, out Message message))
+                        if (TryParseMessage(ref buffer, out Message message))
                         {
-                            FlushResult flushResult = await WriteMessagesAsync(_outputHandler, outputWriter, message);
+                            var writer = gettWriter(message);
 
-                            if (flushResult.IsCanceled || flushResult.IsCompleted)
+                            try
                             {
-                                break;
+                                FlushResult flushResult = await WriteMessagesAsync(writer, message);
+
+                                if (flushResult.IsCanceled || flushResult.IsCompleted)
+                                {
+                                    break;
+                                }
+                            }
+                            finally 
+                            {
+                                await writer.CompleteAsync();
                             }
                         }
 
@@ -61,31 +57,22 @@ namespace Common
                     }
                     finally
                     {
-                        inputReader.AdvanceTo(buffer.Start, buffer.End);
+                        reader.AdvanceTo(buffer.Start, buffer.End);
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(ex);
-            }
             finally
             {
-                await inputReader.CompleteAsync();
-                await outputWriter.CompleteAsync();
+                await reader.CompleteAsync();
             }
         }
 
-        static bool TryParseMessage(
-            Func<ReadOnlySequence<byte>, Message> inputHandler,
+        protected abstract bool TryParseMessage(
             ref ReadOnlySequence<byte> buffer,
-            out Message message) =>
-            !(message = inputHandler(buffer)).Equals(default(Message));
+            out Message message);
 
-        static ValueTask<FlushResult> WriteMessagesAsync(
-            Func<Message, ReadOnlyMemory<byte>> outputHandler,
+        protected abstract ValueTask<FlushResult> WriteMessagesAsync(
             PipeWriter writer,
-            Message message) =>
-            writer.WriteAsync(outputHandler(message));
+            Message message);
     }
 }
