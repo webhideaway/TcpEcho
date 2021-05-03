@@ -106,8 +106,8 @@ namespace Common
                     {
                         var task = Task.Factory.StartNew(() => handler.DynamicInvoke(request), TaskCreationOptions.LongRunning);
                         var success = task.ContinueWith(t => ProcessResponse(writer, t.Result), TaskContinuationOptions.OnlyOnRanToCompletion).Unwrap();
-                        var failed = task.ContinueWith(t => ProcessResponse(writer, t.Exception?.Flatten()?.GetBaseException()), TaskContinuationOptions.NotOnRanToCompletion).Unwrap();
-                        return Task.WhenAny(success, failed).Unwrap();
+                        var failure = task.ContinueWith(t => ProcessResponse(writer, t.Exception?.Flatten()?.GetBaseException()), TaskContinuationOptions.NotOnRanToCompletion).Unwrap();
+                        return Task.WhenAny(success, failure).Unwrap();
                     }
                 ));
             }
