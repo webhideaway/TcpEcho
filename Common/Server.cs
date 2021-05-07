@@ -105,12 +105,16 @@ namespace Common
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
                 var request = _formatter.Deserialize(type, message.RawData);
-                await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
+                return await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
                     {
-                        var task = Task.Factory.StartNew(() => handler.DynamicInvoke(request), TaskCreationOptions.LongRunning);
-                        var success = task.ContinueWith(t => ProcessResponse(writer, t.Result), TaskContinuationOptions.OnlyOnRanToCompletion).Unwrap();
-                        var failure = task.ContinueWith(t => ProcessResponse(writer, t.Exception?.Flatten()?.GetBaseException()), TaskContinuationOptions.NotOnRanToCompletion).Unwrap();
-                        return Task.WhenAny(success, failure).Unwrap();
+                        try
+                        {
+                            return ProcessResponse(writer, handler.DynamicInvoke(request));
+                        }
+                        catch (Exception ex)
+                        {
+                            return ProcessResponse(writer, ex.GetBaseException());
+                        }
                     }
                 ));
             }
