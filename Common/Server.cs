@@ -107,14 +107,16 @@ namespace Common
                 var request = _formatter.Deserialize(type, message.RawData);
                 return await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
                     {
+                        object response = null;
                         try
                         {
-                            return ProcessResponse(writer, handler.DynamicInvoke(request));
+                            response = handler.DynamicInvoke(request);
                         }
                         catch (Exception ex)
                         {
-                            return ProcessResponse(writer, ex.GetBaseException());
+                            response = ex.GetBaseException();
                         }
+                        return ProcessResponse(writer, response);
                     }
                 ));
             }
