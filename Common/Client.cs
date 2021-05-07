@@ -35,7 +35,7 @@ namespace Common
             return _remoteStream.WriteAsync(data, 0, data.Length);
         }
 
-        private Task CallbackTask(Action<Message> handler)
+        private Task ListenTask(Action<Message> handler)
         {
             if (handler == null) return Task.CompletedTask;
 
@@ -50,7 +50,7 @@ namespace Common
         {
             await Task.WhenAll(
                 PostTask(message),
-                CallbackTask(handler));
+                ListenTask(handler));
         }
 
         public async Task PostAsync<TData>(TData data)
