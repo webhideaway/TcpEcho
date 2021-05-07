@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using ZeroFormatter;
 
 namespace Common
@@ -15,6 +16,11 @@ namespace Common
             return ZeroFormatterSerializer.NonGeneric.Deserialize(type, data);
         }
 
+        public T Deserialize<T>(Stream stream)
+        {
+            return ZeroFormatterSerializer.Deserialize<T>(stream);
+        }
+
         public byte[] Serialize<T>(T value)
         {
             return ZeroFormatterSerializer.Serialize<T>(value);
@@ -23,6 +29,11 @@ namespace Common
         public byte[] Serialize(Type type, object value)
         {
             return ZeroFormatterSerializer.NonGeneric.Serialize(type, value);
+        }
+
+        public void Serialize<T>(Stream stream, T value)
+        {
+            ZeroFormatterSerializer.Serialize<T>(stream, value);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Common
 {
@@ -8,8 +9,12 @@ namespace Common
 
         byte[] Serialize(Type type, object value);
 
+        void Serialize<T>(Stream stream, T value);
+
         T Deserialize<T>(byte[] data);
 
         object Deserialize(Type type, byte[] data);
+
+        T Deserialize<T>(Stream stream);
     }
 }
