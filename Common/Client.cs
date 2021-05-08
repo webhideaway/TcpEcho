@@ -21,9 +21,11 @@ namespace Common
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
             _remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            _remoteSocket.Connect(remoteEndPoint);
+            _remoteSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 
+            _remoteSocket.Connect(remoteEndPoint);
             var remoteStream = new NetworkStream(_remoteSocket);
+            
             _remoteWriter = PipeWriter.Create(remoteStream, new StreamPipeWriterOptions(leaveOpen: true));
 
             _callbackEndPoint = callbackEndPoint;

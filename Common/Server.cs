@@ -88,9 +88,11 @@ namespace Common
             if (callbackEndPoint == null) return default;
 
             var callbackSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            callbackSocket.Connect(callbackEndPoint);
+            callbackSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
 
+            callbackSocket.Connect(callbackEndPoint);
             var callbackStream = new NetworkStream(callbackSocket);
+
             return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
