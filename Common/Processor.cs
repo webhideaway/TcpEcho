@@ -27,10 +27,10 @@ namespace Common
 
                         while (TryReadMessage(ref buffer, out Message message))
                         {
-                            if (handler == null)
-                            {
-                                var writer = GetWriter(message);
+                            var writer = GetWriter(message);
 
+                            if (writer != null)
+                            {
                                 try
                                 {
                                     var messages = await ProcessMessageAsync(message);
@@ -40,12 +40,12 @@ namespace Common
                                 }
                                 finally
                                 {
-                                    await writer.CompleteAsync();
+                                    await writer.FlushAsync();
                                 }
                             }
                             else
                             {
-                                handler(message);
+                                handler?.Invoke(message);
                             }
                         }
 
