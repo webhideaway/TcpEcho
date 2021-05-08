@@ -27,24 +27,25 @@ namespace Common
 
                         while (TryReadMessage(ref buffer, out Message message))
                         {
-                            if (handler != null)
+                            if (handler == null)
+                            {
+                                var writer = GetWriter(message);
+
+                                try
+                                {
+                                    var messages = await ProcessMessageAsync(message);
+                                    await foreach (var writeResult in WriteMessagesAsync(writer, messages))
+                                        if (writeResult.IsCanceled || writeResult.IsCompleted)
+                                            continue;
+                                }
+                                finally
+                                {
+                                    await writer.CompleteAsync();
+                                }
+                            }
+                            else
                             {
                                 handler(message);
-                                break;
-                            }
-
-                            var writer = GetWriter(message);
-
-                            try
-                            {
-                                var messages = await ProcessMessageAsync(message);
-                                await foreach (var writeResult in WriteMessagesAsync(writer, messages))
-                                    if (writeResult.IsCanceled || writeResult.IsCompleted)
-                                        continue;
-                            }
-                            finally 
-                            {
-                                await writer.CompleteAsync();
                             }
                         }
 

@@ -70,7 +70,7 @@ namespace Common
         public async Task ListenAsync(Action<object> handler)
         {
             var reader = await AcceptAsync();
-            await ProcessMessagesAsync(reader, message => {
+            _ = ProcessMessagesAsync(reader, message => {
                 var type = Type.GetType(message.RequestType);
                 handler(_formatter.Deserialize(type, message.RawData));
             });
