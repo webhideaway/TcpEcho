@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,15 +19,18 @@ namespace TcpEcho
             int person_count = 0;
             int car_count = 0;
 
-            server.RegisterHandler<DTO.Person>(person =>
-                Console.WriteLine($"PERSON #{Interlocked.Increment(ref person_count)} [Name = {person.Name}, Age = {person.Age}]")
-            );
-
-            server.RegisterHandler<DTO.Car>(car =>
-                Console.WriteLine($"CAR #{Interlocked.Increment(ref car_count)} [Brand = {car.Brand}, Age = {car.Age}]")
-            );
-
-            await server.ListenAsync();
+            await server.ListenAsync(response => {
+                if (response.GetType().IsAssignableFrom(typeof(DTO.Person)))
+                {
+                    var person = (DTO.Person)response;
+                    Console.WriteLine($"PERSON #{Interlocked.Increment(ref person_count)} [Name = {person.Name}, Age = {person.Age}]");
+                }
+                if (response.GetType().IsAssignableFrom(typeof(DTO.Car)))
+                {
+                    var car = (DTO.Car)response;
+                    Console.WriteLine($"CAR #{Interlocked.Increment(ref car_count)} [Brand = {car.Brand}, Age = {car.Age}]");
+                }
+            });
         }
     }
 }
