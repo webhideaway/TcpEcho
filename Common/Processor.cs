@@ -41,6 +41,7 @@ namespace Common
                                 finally
                                 {
                                     await writer.CompleteAsync();
+                                    writer.AsStream().Dispose();
                                 }
                             }
                             else
@@ -66,6 +67,7 @@ namespace Common
             finally
             {
                 await reader.CompleteAsync();
+                reader.AsStream().Dispose();
             }
         }
 

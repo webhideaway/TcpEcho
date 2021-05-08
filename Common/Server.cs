@@ -53,7 +53,7 @@ namespace Common
         {
             var socket = await _listenSocket.AcceptAsync();
             var stream = new NetworkStream(socket);
-            return PipeReader.Create(stream);
+            return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: true));
         }
 
         public async Task ListenAsync()
