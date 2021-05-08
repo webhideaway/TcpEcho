@@ -9,27 +9,27 @@ using ZeroFormatter.Internal;
 
 namespace Common
 {
-    public class Client
+    public class Client : IDisposable
     {
+        private readonly Socket _remoteSocket;
         private readonly PipeWriter _remoteWriter;
-        private Lazy<Server> _callbackListener;
-
+        private Server _callbackListener;
+        private bool _disposedValue;
         private readonly IPEndPoint _callbackEndPoint;
         private readonly IFormatter _formatter;
 
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
-            var remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            remoteSocket.Connect(remoteEndPoint);
+            _remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            _remoteSocket.Connect(remoteEndPoint);
 
-            var remoteStream = new NetworkStream(remoteSocket);
+            var remoteStream = new NetworkStream(_remoteSocket);
             _remoteWriter = PipeWriter.Create(remoteStream, new StreamPipeWriterOptions(leaveOpen: true));
 
             _callbackEndPoint = callbackEndPoint;
             _formatter = formatter ?? new DefaultFormatter();
 
-            _callbackListener = new Lazy<Server>(
-                () => new Server(_callbackEndPoint, formatter: _formatter));
+            _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
         }
 
         private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request)
@@ -52,7 +52,7 @@ namespace Common
             var data = ProcessRequest<TRequest>(request);
             await Task.WhenAll(
                 _remoteWriter.WriteAsync(data).AsTask(),
-                _callbackListener.Value.ListenAsync(response => {
+                _callbackListener.ListenAsync(response => {
                     if (response.GetType().IsAssignableFrom(typeof(Exception)))
                         throw (Exception)response;
                     else if (response.GetType().IsAssignableFrom(typeof(TResponse)))
@@ -61,6 +61,38 @@ namespace Common
                         throw new InvalidDataException($"Unexpected data type received {response.GetType()}");
                 })
             );
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                    _remoteSocket?.Dispose();
+                    _formatter?.Dispose();
+                    _callbackListener?.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                _disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~Client()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

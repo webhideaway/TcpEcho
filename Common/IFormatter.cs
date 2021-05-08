@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Common
 {
-    public interface IFormatter
+    public interface IFormatter : IDisposable
     {
         byte[] Serialize<T>(T value);
 

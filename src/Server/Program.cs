@@ -7,7 +7,7 @@ namespace TcpEcho
     {
         static async Task Main(string[] args)
         {
-            var server = new Common.Server(
+            using var server = new Common.Server(
                 new IPEndPoint(IPAddress.Loopback, 1212));
 
             server.RegisterHandler<string, string>(data => data.ToUpperInvariant());

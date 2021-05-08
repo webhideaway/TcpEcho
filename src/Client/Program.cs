@@ -8,7 +8,7 @@ namespace TcpEcho
     {
         static async Task Main(string[] args)
         {
-            var client = new Common.Client(
+            using var client = new Common.Client(
                 new IPEndPoint(IPAddress.Loopback, 1212),
                 new IPEndPoint(IPAddress.Loopback, 3434));
 

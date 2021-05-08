@@ -14,12 +14,13 @@ using ZeroFormatter.Internal;
 
 namespace Common
 {
-    public class Server : Processor
+    public class Server : Processor, IDisposable
     {
         private readonly Socket _listenSocket;
         private readonly IFormatter _formatter;
+        private bool _disposedValue;
 
-        private readonly static ConcurrentDictionary<Type, Delegate> _registeredHandlers
+        private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers
             = new ConcurrentDictionary<Type, Delegate>();
 
         public Server(IPEndPoint listenEndPoint, IFormatter formatter = null) : base()
@@ -146,6 +147,40 @@ namespace Common
                 BinaryUtil.WriteByte(ref data, data.Length, Message.EOM);
                 yield return await writer.WriteAsync(data);
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                    _listenSocket?.Dispose();
+                    _formatter?.Dispose();
+                    foreach (var registeredHandlerKey in _registeredHandlers.Keys)
+                        _registeredHandlers[registeredHandlerKey] = null;
+                    _registeredHandlers.Clear();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                _disposedValue = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~Server()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
