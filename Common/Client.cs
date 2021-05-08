@@ -37,7 +37,7 @@ namespace Common
             var raw = _formatter.Serialize<TRequest>(request);
             var message = Message.Create<TRequest>(raw, _callbackEndPoint);
             var data = ZeroFormatterSerializer.Serialize<Message>(message);
-            BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
+            BinaryUtil.WriteByte(ref data, data.Length, Message.EOM);
             return data;
         }
 

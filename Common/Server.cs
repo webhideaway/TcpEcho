@@ -100,7 +100,7 @@ namespace Common
 
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
-            SequencePosition? eomPos = buffer.PositionOf(Convert.ToByte(ConsoleKey.Escape));
+            SequencePosition? eomPos = buffer.PositionOf(Message.EOM);
             if (eomPos == null)
             {
                 message = default;
@@ -110,7 +110,9 @@ namespace Common
             var raw = buffer.Slice(0, eomPos.Value).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(raw);
 
-            buffer = buffer.Slice(raw.Length + 1);
+            buffer = new ReadOnlySequence<byte>(
+                buffer.Slice(raw.Length + 1).ToArray().
+                    SkipWhile(bit => bit == Convert.ToByte(null)).ToArray());
             return true;
         }
 
@@ -146,7 +148,7 @@ namespace Common
             foreach (var message in messages)
             {
                 var data = ZeroFormatterSerializer.Serialize<Message>(message);
-                BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
+                BinaryUtil.WriteByte(ref data, data.Length, Message.EOM);
                 yield return await writer.WriteAsync(data);
             }
         }

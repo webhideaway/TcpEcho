@@ -40,7 +40,7 @@ namespace Common
                                 }
                                 finally
                                 {
-                                    await writer.CompleteAsync();
+                                    await writer.FlushAsync();
                                 }
                             }
                             else
@@ -58,7 +58,8 @@ namespace Common
                     }
                     finally
                     {
-                        reader.AdvanceTo(buffer.Start, buffer.End);
+                        if (buffer.Length > 0)
+                            reader.AdvanceTo(buffer.Start, buffer.End);
                     }
                 }
             }

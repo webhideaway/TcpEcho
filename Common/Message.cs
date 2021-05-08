@@ -51,5 +51,7 @@ namespace Common
                 rawData: rawData
             );
         }
+
+        public static byte EOM => Convert.ToByte(ConsoleKey.Escape);
     }
 }
