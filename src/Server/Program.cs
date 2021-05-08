@@ -11,7 +11,6 @@ namespace TcpEcho
                 new IPEndPoint(IPAddress.Loopback, 1212));
 
             server.RegisterHandler<string, string>(data => data.ToUpperInvariant());
-
             await server.ListenAsync();
         }
     }
