@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ namespace Common
 {
     public class Client
     {
-        private readonly Stream _remoteStream;
+        private readonly PipeWriter _remoteWriter;
         private Lazy<Server> _callbackListener;
 
         private readonly IPEndPoint _callbackEndPoint;
@@ -21,7 +22,8 @@ namespace Common
             var remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             remoteSocket.Connect(remoteEndPoint);
 
-            _remoteStream = new NetworkStream(remoteSocket);
+            var remoteStream = new NetworkStream(remoteSocket);
+            _remoteWriter = PipeWriter.Create(remoteStream, new StreamPipeWriterOptions(leaveOpen: true));
 
             _callbackEndPoint = callbackEndPoint;
             _formatter = formatter ?? new DefaultFormatter();
@@ -32,7 +34,7 @@ namespace Common
             var data = ZeroFormatterSerializer.Serialize<Message>(message);
             BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
 
-            return _remoteStream.WriteAsync(data, 0, data.Length);
+            return _remoteWriter.WriteAsync(data).AsTask();
         }
 
         private Task ListenTask(Action<Message> handler)
