@@ -19,8 +19,6 @@ namespace Common
         private readonly Socket _listenSocket;
         private readonly IFormatter _formatter;
 
-        private readonly static ConcurrentDictionary<IPEndPoint, PipeWriter> _pipeWriters
-            = new ConcurrentDictionary<IPEndPoint, PipeWriter>();
         private readonly static ConcurrentDictionary<Type, Delegate> _registeredHandlers
             = new ConcurrentDictionary<Type, Delegate>();
 
@@ -88,14 +86,11 @@ namespace Common
 
             if (callbackEndPoint == null) return default;
 
-            return _pipeWriters.GetOrAdd(callbackEndPoint, callbackEndPoint =>
-            {
-                var callbackSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-                callbackSocket.Connect(callbackEndPoint);
+            var callbackSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            callbackSocket.Connect(callbackEndPoint);
 
-                var callbackStream = new NetworkStream(callbackSocket);
-                return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
-            });
+            var callbackStream = new NetworkStream(callbackSocket);
+            return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
