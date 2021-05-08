@@ -12,12 +12,12 @@ namespace TcpEcho
         static async Task Main(string[] args)
         {
             var remoteEndPoint = new IPEndPoint(IPAddress.Loopback, 1212);
-            var callbackEndPoint = new IPEndPoint(IPAddress.Loopback, 3434);
+            //var callbackEndPoint = new IPEndPoint(IPAddress.Loopback, 3434);
 
             Console.WriteLine("Client posting requests to remote end point: {0}", remoteEndPoint);
-            Console.WriteLine("Client listening for callbacks on callback end point: {0}", callbackEndPoint);
+            //Console.WriteLine("Client listening for callbacks on callback end point: {0}", callbackEndPoint);
 
-            using var client = new Common.Client(remoteEndPoint, callbackEndPoint);
+            using var client = new Common.Client(remoteEndPoint); //, callbackEndPoint);
 
             var random = new Random();
             var stopwatch = new Stopwatch();
