@@ -27,7 +27,7 @@ namespace Common
                             break;
                         }
 
-                        if (TryReadMessage(ref buffer, out Message message))
+                        while (TryReadMessage(ref buffer, out Message message))
                         {
                             var writer = gettWriter(message);
 
