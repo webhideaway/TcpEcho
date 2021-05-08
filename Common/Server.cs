@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using ZeroFormatter;
+using ZeroFormatter.Internal;
 
 namespace Common
 {
@@ -130,8 +131,9 @@ namespace Common
             var type = response.GetType();
             var raw = _formatter.Serialize(type, response);
             var message = Message.Create(type, raw);
-            var output = ZeroFormatterSerializer.Serialize<Message>(message);
-            return writer.WriteAsync(output).AsTask();
+            var data = ZeroFormatterSerializer.Serialize<Message>(message);
+            BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
+            return writer.WriteAsync(data).AsTask();
         }
     }
 }

@@ -37,7 +37,7 @@ namespace Common
             return _remoteWriter.WriteAsync(data).AsTask();
         }
 
-        private Task ListenTask(Action<Message> handler)
+        private Task ListenTask<TData>(Action<TData> handler)
         {
             if (handler == null) return Task.CompletedTask;
 
@@ -48,7 +48,7 @@ namespace Common
             return _callbackListener.Value.ListenAsync();
         }
 
-        private async Task PostAsync(Message message, Action<Message> handler = null)
+        private async Task PostAsync<TData>(Message message, Action<TData> handler = null)
         {
             await Task.WhenAll(
                 PostTask(message),
@@ -59,21 +59,14 @@ namespace Common
         {
             var raw = _formatter.Serialize<TData>(data);
             var message = Message.Create<TData>(raw);
-            await PostAsync(message, null);
-        }
-
-        internal async Task PostAsync(Type type, object data)
-        {
-            var raw = _formatter.Serialize(type, data);
-            var message = Message.Create(type, raw);
-            await PostAsync(message, null);
+            await PostAsync<TData>(message);
         }
 
         public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
         {
             var raw = _formatter.Serialize<TRequest>(request);
             var input = Message.Create<TRequest>(raw, _callbackEndPoint);
-            await PostAsync(input, output => 
+            await PostAsync<Message>(input, output => 
                 handler(_formatter.Deserialize<TResponse>(output.RawData)));
         }
     }
