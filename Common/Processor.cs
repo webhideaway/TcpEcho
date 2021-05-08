@@ -11,7 +11,7 @@ namespace Common
 {
     public abstract class Processor : IProcessor
     {
-        public async Task ProcessMessagesAsync(PipeReader reader, Action<object> handler)
+        public async Task ProcessMessagesAsync(PipeReader reader, Action<Message> handler = null)
         {
             try
             {
@@ -23,64 +23,24 @@ namespace Common
                     try
                     {
                         if (readResult.IsCanceled)
-                        {
                             break;
-                        }
 
                         while (TryReadMessage(ref buffer, out Message message))
                         {
-                            await ProcessMessageAsync(handler, message);
-                        }
-
-                        if (readResult.IsCompleted)
-                        {
-                            if (!buffer.IsEmpty)
+                            if (handler != null)
                             {
-                                throw new InvalidDataException("Incomplete message.");
+                                handler(message);
+                                break;
                             }
-                            break;
-                        }
-                    }
-                    finally
-                    {
-                        reader.AdvanceTo(buffer.Start, buffer.End);
-                    }
-                }
-            }
-            finally
-            {
-                await reader.CompleteAsync();
-            }
-        }
 
-        public async Task ProcessMessagesAsync(PipeReader reader, Func<Message, PipeWriter> gettWriter)
-        {
-            try
-            {
-                while (true)
-                {
-                    ReadResult readResult = await reader.ReadAsync();
-                    ReadOnlySequence<byte> buffer = readResult.Buffer;
-
-                    try
-                    {
-                        if (readResult.IsCanceled)
-                        {
-                            break;
-                        }
-
-                        while (TryReadMessage(ref buffer, out Message message))
-                        {
-                            var writer = gettWriter(message);
+                            var writer = GetWriter(message);
 
                             try
                             {
-                                FlushResult[] flushResults = await ProcessMessageAsync(writer, message);
-
-                                if (flushResults.All(flushResult => flushResult.IsCanceled || flushResult.IsCompleted))
-                                {
-                                    break;
-                                }
+                                var messages = await ProcessMessageAsync(message);
+                                await foreach (var writeResult in WriteMessagesAsync(writer, messages))
+                                    if (writeResult.IsCanceled || writeResult.IsCompleted)
+                                        continue;
                             }
                             finally 
                             {
@@ -91,9 +51,7 @@ namespace Common
                         if (readResult.IsCompleted)
                         {
                             if (!buffer.IsEmpty)
-                            {
                                 throw new InvalidDataException("Incomplete message.");
-                            }
                             break;
                         }
                     }
@@ -109,16 +67,12 @@ namespace Common
             }
         }
 
-        protected abstract bool TryReadMessage(
-            ref ReadOnlySequence<byte> buffer,
-            out Message message);
+        public abstract PipeWriter GetWriter(Message message);
 
-        protected abstract Task<FlushResult[]> ProcessMessageAsync(
-            PipeWriter writer,
-            Message message);
+        protected abstract bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message);
 
-        protected abstract Task ProcessMessageAsync(
-            Action<object> handler,
-            Message message);
+        protected abstract Task<Message[]> ProcessMessageAsync(Message message);
+
+        protected abstract IAsyncEnumerable<FlushResult> WriteMessagesAsync(PipeWriter writer, params Message[] messages);
     }
 }

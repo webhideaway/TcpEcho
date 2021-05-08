@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
@@ -50,28 +51,32 @@ namespace Common
             });
         }
 
+        private async Task<PipeReader> AcceptAsync()
+        {
+            var socket = await _listenSocket.AcceptAsync();
+            var stream = new NetworkStream(socket);
+            return PipeReader.Create(stream);
+        }
+
         public async Task ListenAsync()
         {
             while (true)
             {
-                var socket = await _listenSocket.AcceptAsync();
-                var stream = new NetworkStream(socket);
-                var reader = PipeReader.Create(stream);
-
-                await ProcessMessagesAsync(reader, GetWriter);
+                var reader = await AcceptAsync();
+                await ProcessMessagesAsync(reader);
             }
         }
 
-        public async Task ListenAsync(Action<object> localHandler)
+        public async Task ListenAsync(Action<object> handler)
         {
-            var socket = await _listenSocket.AcceptAsync();
-            var stream = new NetworkStream(socket);
-            var reader = PipeReader.Create(stream);
-
-            await ProcessMessagesAsync(reader, localHandler);
+            var reader = await AcceptAsync();
+            await ProcessMessagesAsync(reader, message => {
+                var type = Type.GetType(message.RequestType);
+                handler(_formatter.Deserialize(type, message.RawData));
+            });
         }
 
-        private Func<Message, PipeWriter> GetWriter = message =>
+        public override PipeWriter GetWriter(Message message)
         {
             IPEndPoint callbackEndPoint = null;
 
@@ -91,7 +96,7 @@ namespace Common
                 var callbackStream = new NetworkStream(callbackSocket);
                 return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
             });
-        };
+        }
 
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
@@ -109,13 +114,14 @@ namespace Common
             return true;
         }
 
-        protected override async Task<FlushResult[]> ProcessMessageAsync(PipeWriter writer, Message message)
+        protected override async Task<Message[]> ProcessMessageAsync(Message message)
         {
             var type = Type.GetType(message.RequestType);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
                 var request = _formatter.Deserialize(type, message.RawData);
                 return await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
+                    Task.Factory.StartNew(() =>
                     {
                         object response = null;
                         try
@@ -126,43 +132,23 @@ namespace Common
                         {
                             response = ex.GetBaseException();
                         }
-                        return ProcessResponse(writer, response);
-                    }
+                        var type = response.GetType();
+                        var raw = _formatter.Serialize(type, response);
+                        return Message.Create(type, raw);
+                    })
                 ));
             }
             return default;
         }
 
-        private Task<FlushResult> ProcessResponse(PipeWriter writer, object response)
+        protected override async IAsyncEnumerable<FlushResult> WriteMessagesAsync(PipeWriter writer, params Message[] messages)
         {
-            if (writer == null) return default;
-            if (response == null) return default;
-            var type = response.GetType();
-            var raw = _formatter.Serialize(type, response);
-            var message = Message.Create(type, raw);
-            var data = ZeroFormatterSerializer.Serialize<Message>(message);
-            BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
-            return writer.WriteAsync(data).AsTask();
-        }
-
-        protected override async Task ProcessMessageAsync(Action<object> handler, Message message)
-        {
-            var type = Type.GetType(message.RequestType);
-            var request = _formatter.Deserialize(type, message.RawData);
-            var response = await Task.Factory.StartNew(() =>
+            foreach (var message in messages)
             {
-                object response = null;
-                try
-                {
-                    response = handler.DynamicInvoke(request);
-                }
-                catch (Exception ex)
-                {
-                    response = ex.GetBaseException();
-                }
-                return response;
-            });
-            handler(response);
+                var data = ZeroFormatterSerializer.Serialize<Message>(message);
+                BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
+                yield return await writer.WriteAsync(data);
+            }
         }
     }
 }

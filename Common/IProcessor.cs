@@ -6,6 +6,8 @@ namespace Common
 {
     public interface IProcessor
     {
-        Task ProcessMessagesAsync(PipeReader reader, Func<Message, PipeWriter> gettWriter);
+        PipeWriter GetWriter(Message message);
+
+        Task ProcessMessagesAsync(PipeReader reader, Action<Message> handler = null);
     }
 }
