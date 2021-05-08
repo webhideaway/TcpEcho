@@ -31,7 +31,8 @@ namespace Common
             _callbackEndPoint = callbackEndPoint;
             _formatter = formatter ?? new DefaultFormatter();
 
-            _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
+            if (_callbackEndPoint != null)
+                _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
         }
 
         private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request)
