@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroFormatter.Interfaces", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroFormatter", "ZeroFormatter\ZeroFormatter.csproj", "{33356D54-C15D-4031-8DB3-156EBE2AF711}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DTO", "DTO\DTO.csproj", "{33884320-F868-4648-9C2E-45728E486F06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{33356D54-C15D-4031-8DB3-156EBE2AF711}.Release|x64.Build.0 = Release|Any CPU
 		{33356D54-C15D-4031-8DB3-156EBE2AF711}.Release|x86.ActiveCfg = Release|Any CPU
 		{33356D54-C15D-4031-8DB3-156EBE2AF711}.Release|x86.Build.0 = Release|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Debug|x64.Build.0 = Debug|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Debug|x86.Build.0 = Debug|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Release|x64.ActiveCfg = Release|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Release|x64.Build.0 = Release|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Release|x86.ActiveCfg = Release|Any CPU
+		{33884320-F868-4648-9C2E-45728E486F06}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
