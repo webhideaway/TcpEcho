@@ -27,25 +27,16 @@ namespace Common
 
                         while (TryReadMessage(ref buffer, out Message message))
                         {
-                            var writer = GetWriter(message);
-
-                            if (writer != null)
+                            if (handler == null)
                             {
-                                try
-                                {
-                                    var messages = await ProcessMessageAsync(message);
-                                    await foreach (var writeResult in WriteMessagesAsync(writer, messages))
-                                        if (writeResult.IsCanceled || writeResult.IsCompleted)
-                                            continue;
-                                }
-                                finally
-                                {
-                                    await writer.FlushAsync();
-                                }
+                                var messages = await ProcessMessageAsync(message);
+                                await foreach (var writeResult in WriteMessagesAsync(message, messages))
+                                    if (writeResult.IsCanceled || writeResult.IsCompleted)
+                                        continue;
                             }
                             else
                             {
-                                handler?.Invoke(message);
+                                handler(message);
                             }
                         }
 
@@ -75,6 +66,6 @@ namespace Common
 
         protected abstract Task<Message[]> ProcessMessageAsync(Message message);
 
-        protected abstract IAsyncEnumerable<FlushResult> WriteMessagesAsync(PipeWriter writer, params Message[] messages);
+        protected abstract IAsyncEnumerable<FlushResult> WriteMessagesAsync(Message input, params Message[] outputs);
     }
 }

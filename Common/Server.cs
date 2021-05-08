@@ -141,11 +141,13 @@ namespace Common
             return default;
         }
 
-        protected override async IAsyncEnumerable<FlushResult> WriteMessagesAsync(PipeWriter writer, params Message[] messages)
+        protected override async IAsyncEnumerable<FlushResult> WriteMessagesAsync(Message input, params Message[] outputs)
         {
-            foreach (var message in messages)
+            var writer = GetWriter(input);
+            if (writer == null) yield return default;
+            foreach (var output in outputs)
             {
-                var data = ZeroFormatterSerializer.Serialize<Message>(message);
+                var data = ZeroFormatterSerializer.Serialize<Message>(output);
                 BinaryUtil.WriteByte(ref data, data.Length, Message.EOM);
                 yield return await writer.WriteAsync(data);
             }
