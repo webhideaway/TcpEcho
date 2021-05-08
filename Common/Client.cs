@@ -27,6 +27,9 @@ namespace Common
 
             _callbackEndPoint = callbackEndPoint;
             _formatter = formatter ?? new DefaultFormatter();
+
+            _callbackListener = new Lazy<Server>(
+                () => new Server(_callbackEndPoint, formatter: _formatter));
         }
 
         private Task PostTask(Message message)
@@ -41,9 +44,6 @@ namespace Common
         {
             if (handler == null) return Task.CompletedTask;
 
-            _callbackListener = new Lazy<Server>(
-                () => new Server(_callbackEndPoint, formatter: _formatter));
-
             _callbackListener.Value.RegisterHandler(handler);
             return _callbackListener.Value.ListenAsync();
         }
@@ -52,7 +52,7 @@ namespace Common
         {
             await Task.WhenAll(
                 PostTask(message),
-                ListenTask(handler));
+                ListenTask<TData>(handler));
         }
 
         public async Task PostAsync<TData>(TData data)
