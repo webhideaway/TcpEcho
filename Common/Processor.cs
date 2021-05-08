@@ -11,6 +11,48 @@ namespace Common
 {
     public abstract class Processor : IProcessor
     {
+        public async Task ProcessMessagesAsync(PipeReader reader, Action<object> handler)
+        {
+            try
+            {
+                while (true)
+                {
+                    ReadResult readResult = await reader.ReadAsync();
+                    ReadOnlySequence<byte> buffer = readResult.Buffer;
+
+                    try
+                    {
+                        if (readResult.IsCanceled)
+                        {
+                            break;
+                        }
+
+                        while (TryReadMessage(ref buffer, out Message message))
+                        {
+                            await ProcessMessageAsync(handler, message);
+                        }
+
+                        if (readResult.IsCompleted)
+                        {
+                            if (!buffer.IsEmpty)
+                            {
+                                throw new InvalidDataException("Incomplete message.");
+                            }
+                            break;
+                        }
+                    }
+                    finally
+                    {
+                        reader.AdvanceTo(buffer.Start, buffer.End);
+                    }
+                }
+            }
+            finally
+            {
+                await reader.CompleteAsync();
+            }
+        }
+
         public async Task ProcessMessagesAsync(PipeReader reader, Func<Message, PipeWriter> gettWriter)
         {
             try
@@ -73,6 +115,10 @@ namespace Common
 
         protected abstract Task<FlushResult[]> ProcessMessageAsync(
             PipeWriter writer,
+            Message message);
+
+        protected abstract Task ProcessMessageAsync(
+            Action<object> handler,
             Message message);
     }
 }

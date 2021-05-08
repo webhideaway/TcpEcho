@@ -62,6 +62,15 @@ namespace Common
             }
         }
 
+        public async Task ListenAsync(Action<object> localHandler)
+        {
+            var socket = await _listenSocket.AcceptAsync();
+            var stream = new NetworkStream(socket);
+            var reader = PipeReader.Create(stream);
+
+            await ProcessMessagesAsync(reader, localHandler);
+        }
+
         private Func<Message, PipeWriter> GetWriter = message =>
         {
             IPEndPoint callbackEndPoint = null;
@@ -134,6 +143,26 @@ namespace Common
             var data = ZeroFormatterSerializer.Serialize<Message>(message);
             BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
             return writer.WriteAsync(data).AsTask();
+        }
+
+        protected override async Task ProcessMessageAsync(Action<object> handler, Message message)
+        {
+            var type = Type.GetType(message.RequestType);
+            var request = _formatter.Deserialize(type, message.RawData);
+            var response = await Task.Factory.StartNew(() =>
+            {
+                object response = null;
+                try
+                {
+                    response = handler.DynamicInvoke(request);
+                }
+                catch (Exception ex)
+                {
+                    response = ex.GetBaseException();
+                }
+                return response;
+            });
+            handler(response);
         }
     }
 }

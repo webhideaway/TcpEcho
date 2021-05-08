@@ -50,10 +50,16 @@ namespace Common
         public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
         {
             var data = ProcessRequest<TRequest>(request);
-            _callbackListener.Value.RegisterHandler(handler);
             await Task.WhenAll(
                 _remoteWriter.WriteAsync(data).AsTask(),
-                _callbackListener.Value.ListenAsync()
+                _callbackListener.Value.ListenAsync(response => {
+                    if (response.GetType().IsAssignableFrom(typeof(Exception)))
+                        throw (Exception)response;
+                    else if (response.GetType().IsAssignableFrom(typeof(TResponse)))
+                        handler((TResponse)response);
+                    else
+                        throw new InvalidDataException($"Unexpected data type received {response.GetType()}");
+                })
             );
         }
     }
