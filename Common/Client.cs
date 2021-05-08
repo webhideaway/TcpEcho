@@ -32,42 +32,29 @@ namespace Common
                 () => new Server(_callbackEndPoint, formatter: _formatter));
         }
 
-        private Task PostTask(Message message)
+        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request)
         {
+            var raw = _formatter.Serialize<TRequest>(request);
+            var message = Message.Create<TRequest>(raw, _callbackEndPoint);
             var data = ZeroFormatterSerializer.Serialize<Message>(message);
             BinaryUtil.WriteByte(ref data, data.Length, Convert.ToByte(ConsoleKey.Escape));
-
-            return _remoteWriter.WriteAsync(data).AsTask();
+            return data;
         }
 
-        private Task ListenTask<TData>(Action<TData> handler)
+        public async Task PostAsync<TRequest>(TRequest request)
         {
-            if (handler == null) return Task.CompletedTask;
-
-            _callbackListener.Value.RegisterHandler(handler);
-            return _callbackListener.Value.ListenAsync();
-        }
-
-        private async Task PostAsync<TData>(Message message, Action<TData> handler = null)
-        {
-            await Task.WhenAll(
-                PostTask(message),
-                ListenTask<TData>(handler));
-        }
-
-        public async Task PostAsync<TData>(TData data)
-        {
-            var raw = _formatter.Serialize<TData>(data);
-            var message = Message.Create<TData>(raw);
-            await PostAsync<TData>(message);
+            var data = ProcessRequest<TRequest>(request);
+            await _remoteWriter.WriteAsync(data).AsTask();
         }
 
         public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
         {
-            var raw = _formatter.Serialize<TRequest>(request);
-            var input = Message.Create<TRequest>(raw, _callbackEndPoint);
-            await PostAsync<Message>(input, output => 
-                handler(_formatter.Deserialize<TResponse>(output.RawData)));
+            var data = ProcessRequest<TRequest>(request);
+            _callbackListener.Value.RegisterHandler(handler);
+            await Task.WhenAll(
+                _remoteWriter.WriteAsync(data).AsTask(),
+                _callbackListener.Value.ListenAsync()
+            );
         }
     }
 }
