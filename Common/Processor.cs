@@ -40,7 +40,7 @@ namespace Common
                                 }
                                 finally
                                 {
-                                    await writer.FlushAsync();
+                                    await writer.CompleteAsync();
                                 }
                             }
                             else
