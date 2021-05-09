@@ -19,15 +19,15 @@ namespace TcpEcho
             int person_count = 0;
             int car_count = 0;
 
-            await server.ListenAsync(response => {
-                if (response.GetType().IsAssignableFrom(typeof(DTO.Person)))
+            await server.ListenAsync(input: request => {
+                if (request.GetType().IsAssignableFrom(typeof(DTO.Person)))
                 {
-                    var person = (DTO.Person)response;
+                    var person = (DTO.Person)request;
                     Console.WriteLine($"PERSON #{Interlocked.Increment(ref person_count)} [Name = {person.Name}, Age = {person.Age}]");
                 }
-                if (response.GetType().IsAssignableFrom(typeof(DTO.Car)))
+                if (request.GetType().IsAssignableFrom(typeof(DTO.Car)))
                 {
-                    var car = (DTO.Car)response;
+                    var car = (DTO.Car)request;
                     Console.WriteLine($"CAR #{Interlocked.Increment(ref car_count)} [Brand = {car.Brand}, Age = {car.Age}]");
                 }
             });

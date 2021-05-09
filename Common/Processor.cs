@@ -11,7 +11,8 @@ namespace Common
 {
     public abstract class Processor : IProcessor
     {
-        public async Task ProcessMessagesAsync(PipeReader reader, Action<Message> handler = null)
+        public async Task ProcessMessagesAsync(PipeReader reader, 
+            Action<Message> input = null, Action<Message[]> outputs = null)
         {
             try
             {
@@ -27,18 +28,13 @@ namespace Common
 
                         while (TryReadMessage(ref buffer, out Message message))
                         {
-                            if (handler == null)
-                            {
-                                var messages = await ProcessMessageAsync(message);
-                                await foreach (var writeResult in WriteMessagesAsync(message, messages))
-                                    if (writeResult.IsCanceled || writeResult.IsCompleted)
-                                        continue;
-                            }
-                            else
-                            {
-                                handler(message);
-                            }
-                        }
+                            input?.Invoke(message);
+                            var messages = await ProcessMessageAsync(message);
+                            outputs?.Invoke(messages);
+                            await foreach (var writeResult in WriteMessagesAsync(message, messages))
+                                if (writeResult.IsCanceled || writeResult.IsCompleted)
+                                    continue;
+                         }
 
                         if (readResult.IsCompleted)
                         {

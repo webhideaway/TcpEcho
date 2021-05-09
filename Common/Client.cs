@@ -50,19 +50,27 @@ namespace Common
             await _remoteWriter.WriteAsync(data).AsTask();
         }
 
-        public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
+        private Task CallbackTask<TResponse>(Action<TResponse> handler)
         {
-            var data = ProcessRequest<TRequest>(request);
-            await Task.WhenAll(
-                _remoteWriter.WriteAsync(data).AsTask(),
-                _callbackListener.ListenAsync(response => {
+            return _callbackListener == null || handler == null ? Task.CompletedTask :
+                _callbackListener.ListenAsync(output: response =>
+                {
                     if (response.GetType().IsAssignableFrom(typeof(Exception)))
                         throw (Exception)response;
                     else if (response.GetType().IsAssignableFrom(typeof(TResponse)))
                         handler((TResponse)response);
                     else
                         throw new InvalidDataException($"Unexpected data type received {response.GetType()}");
-                })
+                }
+            );
+        }
+
+        public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
+        {
+            var data = ProcessRequest<TRequest>(request);
+            await Task.WhenAll(
+                _remoteWriter.WriteAsync(data).AsTask(),
+                CallbackTask<TResponse>(handler)
             );
         }
 

@@ -56,23 +56,29 @@ namespace Common
             var stream = new NetworkStream(socket);
             return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: true));
         }
+        
+        private void Handle(Message message, Action<object> handler)
+        {
+            if (handler == null) return;
+            var type = Type.GetType(message.RequestType);
+            var data = _formatter.Deserialize(type, message.RawData);
+            handler(data);
+        }
 
-        public async Task ListenAsync()
+        public async Task ListenAsync(
+            Action<object> input = null, Action<object> output = null)
         {
             while (true)
             {
                 var reader = await AcceptAsync();
-                await ProcessMessagesAsync(reader);
+                await ProcessMessagesAsync(reader, 
+                    message => Handle(message, input),
+                    messages => {
+                        foreach (var message in messages) 
+                            Handle(message, output);
+                    }
+                );
             }
-        }
-
-        public async Task ListenAsync(Action<object> handler)
-        {
-            var reader = await AcceptAsync();
-            _ = ProcessMessagesAsync(reader, message => {
-                var type = Type.GetType(message.RequestType);
-                handler(_formatter.Deserialize(type, message.RawData));
-            });
         }
 
         public override PipeWriter GetWriter(Message message)

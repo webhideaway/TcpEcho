@@ -8,6 +8,7 @@ namespace Common
     {
         PipeWriter GetWriter(Message message);
 
-        Task ProcessMessagesAsync(PipeReader reader, Action<Message> handler = null);
+        Task ProcessMessagesAsync(PipeReader reader, 
+            Action<Message> input = null, Action<Message[]> outputs = null);
     }
 }
