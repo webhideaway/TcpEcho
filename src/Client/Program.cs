@@ -39,7 +39,7 @@ namespace TcpEcho
                         var person = new DTO.Person
                         (
                             name: new string(Enumerable.Range(1, random.Next(5, 15)).
-                                Select(_ => Convert.ToChar(random.Next(65, 130))).ToArray()),
+                                Select(_ => Convert.ToChar(random.Next(65, 90))).ToArray()),
                             age: random.Next(1, 100)
                         );
 
@@ -52,7 +52,7 @@ namespace TcpEcho
                         var car = new DTO.Car
                         (
                             brand: new string(Enumerable.Range(1, random.Next(5, 15)).
-                                Select(_ => Convert.ToChar(random.Next(65, 130))).ToArray()),
+                                Select(_ => Convert.ToChar(random.Next(65, 90))).ToArray()),
                             age: random.Next(1, 10)
                         );
 

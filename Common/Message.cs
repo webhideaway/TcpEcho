@@ -52,6 +52,8 @@ namespace Common
             );
         }
 
+        public static byte BOM => Convert.ToByte(ConsoleKey.Home);
+
         public static byte EOM => Convert.ToByte(ConsoleKey.Escape);
     }
 }

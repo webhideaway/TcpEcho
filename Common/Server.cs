@@ -105,18 +105,18 @@ namespace Common
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
             var nullPos = new SequencePosition();
+
+            var bomPos = buffer.PositionOf(Message.BOM) ?? nullPos;
             var eomPos = buffer.PositionOf(Message.EOM) ?? nullPos;
 
             message = default;
-            if (eomPos.Equals(nullPos))
+            if (bomPos.Equals(nullPos) || eomPos.Equals(nullPos))
                 return false;
 
-            var consumed = buffer.Slice(buffer.Start, eomPos).ToArray();
-            buffer = buffer.Slice(consumed.Length + 1);
-            
-            consumed = consumed.SkipWhile(bit => bit == 0).ToArray();
+            var consumed = buffer.Slice(bomPos, eomPos).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
 
+            buffer = buffer.Slice(eomPos);
             return true;
         }
 
@@ -153,7 +153,9 @@ namespace Common
             if (writer == null) yield return default;
             foreach (var output in outputs ?? new Message[] { })
             {
-                var data = ZeroFormatterSerializer.Serialize<Message>(output);
+                var data = new byte[] { };
+                BinaryUtil.WriteByte(ref data, 0, Message.BOM);
+                ZeroFormatterSerializer.Serialize<Message>(ref data, 1, output);
                 BinaryUtil.WriteByte(ref data, data.Length, Message.EOM);
                 yield return await writer.WriteAsync(data);
             }
