@@ -9,13 +9,13 @@ namespace Common
     {
         public Message(
             string id = null,
-            string requestType = null,
+            string typeName = null,
             byte[] callbackAddress = null,
             int callbackPort = 0,
             byte[] rawData = null)
         {
             Id = id;
-            RequestType = requestType;
+            TypeName = typeName;
             CallbackAddress = callbackAddress;
             CallbackPort = callbackPort;
             RawData = rawData;
@@ -25,7 +25,7 @@ namespace Common
         public readonly string Id;
 
         [Index(1)]
-        public readonly string RequestType;
+        public readonly string TypeName;
 
         [Index(2)]
         public readonly byte[] CallbackAddress;
@@ -45,7 +45,7 @@ namespace Common
         {
             return new Message(
                 id: Guid.NewGuid().ToString(),
-                requestType: type.FullName,
+                typeName: type.FullName,
                 callbackAddress: callbackEndPoint?.Address.GetAddressBytes(),
                 callbackPort: callbackEndPoint?.Port ?? 0,
                 rawData: rawData

@@ -60,7 +60,7 @@ namespace Common
         private void Handle(Message message, Action<object> handler)
         {
             if (handler == null) return;
-            var type = Type.GetType(message.RequestType);
+            var type = Type.GetType(message.TypeName);
             var data = _formatter.Deserialize(type, message.RawData);
             handler(data);
         }
@@ -122,7 +122,7 @@ namespace Common
 
         protected override async Task<Message[]> ProcessMessageAsync(Message message)
         {
-            var type = Type.GetType(message.RequestType);
+            var type = Type.GetType(message.TypeName);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
                 var request = _formatter.Deserialize(type, message.RawData);
