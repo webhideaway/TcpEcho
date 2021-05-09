@@ -40,9 +40,9 @@ namespace Common
             var raw = _formatter.Serialize<TRequest>(request);
             var message = Message.Create<TRequest>(raw, _callbackEndPoint);
             var data = new byte[] { };
-            BinaryUtil.WriteByte(ref data, 0, Message.BOM);
-            ZeroFormatterSerializer.Serialize<Message>(ref data, 1, message);
-            BinaryUtil.WriteByte(ref data, data.Length, Message.EOM);
+            BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
+            ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, message);
+            BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
             return data;
         }
 

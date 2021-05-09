@@ -102,21 +102,34 @@ namespace Common
             return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
+        private SequencePosition? GetSequencePosition(ref ReadOnlySequence<byte> buffer, byte[] sequence)
+        {
+            var positions = new List<SequencePosition?>(sequence.Length);
+            foreach (var item in sequence) positions.Add(buffer.PositionOf(item));
+
+            var list = positions.Select(position => position.HasValue ? position.Value.GetInteger() : 0);
+            var sequential = !list.OrderBy(item => item).Select((i, j) => i - j).Distinct().Skip(1).Any();
+
+            if (sequential) return positions.Min();
+            return default;
+        }
+
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
-            var nullPos = new SequencePosition();
-
-            var bomPos = buffer.PositionOf(Message.BOM) ?? nullPos;
-            var eomPos = buffer.PositionOf(Message.EOM) ?? nullPos;
+            var bomPos = GetSequencePosition(ref buffer, Message.BOM);
+            var eomPos = GetSequencePosition(ref buffer, Message.EOM);
 
             message = default;
-            if (bomPos.Equals(nullPos) || eomPos.Equals(nullPos))
+            if (bomPos == null || eomPos == null)
                 return false;
 
-            var consumed = buffer.Slice(bomPos, eomPos).ToArray();
+            var start = bomPos.Value.GetInteger() + Message.BOM.Length + 1;
+            var end = eomPos.Value.GetInteger() + Message.EOM.Length + 1;
+
+            var consumed = buffer.Slice(start, eomPos.Value).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
 
-            buffer = buffer.Slice(eomPos);
+            buffer = buffer.Slice(end);
             return true;
         }
 
@@ -154,9 +167,9 @@ namespace Common
             foreach (var output in outputs ?? new Message[] { })
             {
                 var data = new byte[] { };
-                BinaryUtil.WriteByte(ref data, 0, Message.BOM);
-                ZeroFormatterSerializer.Serialize<Message>(ref data, 1, output);
-                BinaryUtil.WriteByte(ref data, data.Length, Message.EOM);
+                BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
+                ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, output);
+                BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
                 yield return await writer.WriteAsync(data);
             }
         }

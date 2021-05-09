@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using ZeroFormatter;
 
@@ -52,8 +53,8 @@ namespace Common
             );
         }
 
-        public static byte BOM => Convert.ToByte(ConsoleKey.Home);
+        public static byte[] BOM => "<BOM>".ToCharArray().Select(_ => Convert.ToByte(_)).ToArray();
 
-        public static byte EOM => Convert.ToByte(ConsoleKey.Escape);
+        public static byte[] EOM => "<EOM>".ToCharArray().Select(_ => Convert.ToByte(_)).ToArray();
     }
 }
