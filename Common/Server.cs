@@ -151,7 +151,7 @@ namespace Common
         {
             var writer = GetWriter(input);
             if (writer == null) yield return default;
-            foreach (var output in outputs)
+            foreach (var output in outputs ?? new Message[] { })
             {
                 var data = ZeroFormatterSerializer.Serialize<Message>(output);
                 BinaryUtil.WriteByte(ref data, data.Length, Message.EOM);
