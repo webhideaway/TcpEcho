@@ -37,11 +37,7 @@ namespace Common
                         }
 
                         if (readResult.IsCompleted)
-                        {
-                            if (!buffer.IsEmpty)
-                                throw new InvalidDataException("Incomplete message.");
-                            break;
-                        }
+                             break;
                     }
                     finally
                     {
