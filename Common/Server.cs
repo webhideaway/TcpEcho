@@ -115,6 +115,8 @@ namespace Common
             message = ZeroFormatterSerializer.Deserialize<Message>(consumed.ToArray());
 
             buffer = buffer.Slice(consumed.Length + 1);
+            buffer = new ReadOnlySequence<byte>(
+                buffer.ToArray().SkipWhile(bit => bit == 0).ToArray());
             return true;
         }
 
