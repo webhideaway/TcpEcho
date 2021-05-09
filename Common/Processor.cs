@@ -20,24 +20,20 @@ namespace Common
                 {
                     ReadResult readResult = await reader.ReadAsync();
                     ReadOnlySequence<byte> buffer = readResult.Buffer;
-                    int position = 0;
 
                     try
                     {
                         if (readResult.IsCanceled)
                             break;
 
-                        while (TryReadMessage(buffer, ref position, out Message message))
+                        while (TryReadMessage(ref buffer, out Message message))
                         {
                             input?.Invoke(message);
                             var messages = await ProcessMessageAsync(message);
                             outputs?.Invoke(messages);
-                            
                             await foreach (var writeResult in WriteMessagesAsync(message, messages))
                                 if (writeResult.IsCanceled || writeResult.IsCompleted)
                                     continue;
-
-                            reader.AdvanceTo(new SequencePosition(buffer, position));
                         }
 
                         if (readResult.IsCompleted)
@@ -49,7 +45,10 @@ namespace Common
                     }
                     finally
                     {
-                        reader.AdvanceTo(buffer.End);
+                        if (buffer.Length > 0)
+                            reader.AdvanceTo(buffer.Start, buffer.End);
+                        else
+                            reader.AdvanceTo(buffer.End);
                     }
                 }
             }
@@ -61,7 +60,7 @@ namespace Common
 
         public abstract PipeWriter GetWriter(Message message);
 
-        protected abstract bool TryReadMessage(ReadOnlySequence<byte> buffer, ref int position, out Message message);
+        protected abstract bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message);
 
         protected abstract Task<Message[]> ProcessMessageAsync(Message message);
 
