@@ -74,7 +74,7 @@ namespace Common
                 await ProcessMessagesAsync(reader, 
                     message => Handle(message, input),
                     messages => {
-                        foreach (var message in messages) 
+                        foreach (var message in messages ?? new Message[] { }) 
                             Handle(message, output);
                     }
                 );
