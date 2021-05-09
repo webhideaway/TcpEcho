@@ -104,18 +104,17 @@ namespace Common
 
         private int? GetSequencePosition(ReadOnlySequence<byte> buffer, byte[] sequence, int offset = 0)
         {
-            var positions = new List<int>(sequence.Length);
-            foreach (var item in sequence)
+            var found = new int[sequence.Length];
+            for (var index = 0; index < sequence.Length; index++)
             {
+                var item = sequence[index];
                 var position = buffer.Slice(offset).PositionOf(item);
                 if (position == null) return null;
-                positions.Add(position.Value.GetInteger());
+                found[index] = position.Value.GetInteger();
+                if (index > 0 && found[index] > found[index - 1] + 1)
+                    return GetSequencePosition(buffer, sequence, offset + found[index] - index);
             }
-
-            var sequential = !positions.OrderBy(position => position)
-                .Select((i, j) => i - j).Distinct().Skip(1).Any();
-            if (sequential) return positions.Min();
-            return null;
+            return found[0];
         }
 
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
