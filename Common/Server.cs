@@ -114,9 +114,7 @@ namespace Common
             var raw = buffer.Slice(0, eomPos.Value).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(raw);
 
-            buffer = new ReadOnlySequence<byte>(
-                buffer.Slice(raw.Length + 1).ToArray().
-                    SkipWhile(bit => bit == Convert.ToByte(null)).ToArray());
+            buffer = buffer.Slice(raw.Length + 1);
             return true;
         }
 

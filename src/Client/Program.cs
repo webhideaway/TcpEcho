@@ -22,12 +22,12 @@ namespace TcpEcho
             var random = new Random();
             var stopwatch = new Stopwatch();
 
-            var range = random.Next(500, 1500);
+            var range = random.Next(5, 15);
 
             int person_count = 0;
             int car_count = 0;
 
-            while (true)
+            //while (true)
             {
                 stopwatch.Start();
                 foreach (var idx in Enumerable.Range(0, range).

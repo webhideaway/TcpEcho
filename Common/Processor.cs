@@ -34,7 +34,7 @@ namespace Common
                             await foreach (var writeResult in WriteMessagesAsync(message, messages))
                                 if (writeResult.IsCanceled || writeResult.IsCompleted)
                                     continue;
-                         }
+                        }
 
                         if (readResult.IsCompleted)
                         {
