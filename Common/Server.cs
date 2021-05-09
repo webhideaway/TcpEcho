@@ -104,17 +104,17 @@ namespace Common
 
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
-            SequencePosition? eomPos = buffer.PositionOf(Message.EOM);
-            if (eomPos == null)
-            {
-                message = default;
+            var nullPos = new SequencePosition();
+            var eomPos = buffer.PositionOf(Message.EOM) ?? nullPos;
+
+            message = default;
+            if (eomPos.Equals(nullPos))
                 return false;
-            }
 
-            var raw = buffer.Slice(0, eomPos.Value).ToArray();
-            message = ZeroFormatterSerializer.Deserialize<Message>(raw);
+            var consumed = buffer.Slice(buffer.Start, eomPos);
+            message = ZeroFormatterSerializer.Deserialize<Message>(consumed.ToArray());
 
-            buffer = buffer.Slice(raw.Length + 1);
+            buffer = buffer.Slice(consumed.Length + 1);
             return true;
         }
 

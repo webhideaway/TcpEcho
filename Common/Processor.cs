@@ -47,6 +47,8 @@ namespace Common
                     {
                         if (buffer.Length > 0)
                             reader.AdvanceTo(buffer.Start, buffer.End);
+                        else
+                            reader.AdvanceTo(buffer.End);
                     }
                 }
             }
