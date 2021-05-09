@@ -45,7 +45,7 @@ namespace Common
         {
             return new Message(
                 id: Guid.NewGuid().ToString(),
-                typeName: type.FullName,
+                typeName: $"{type.FullName}, {type.Assembly.FullName}",
                 callbackAddress: callbackEndPoint?.Address.GetAddressBytes(),
                 callbackPort: callbackEndPoint?.Port ?? 0,
                 rawData: rawData
