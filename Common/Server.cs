@@ -111,12 +111,12 @@ namespace Common
             if (eomPos.Equals(nullPos))
                 return false;
 
-            var consumed = buffer.Slice(buffer.Start, eomPos);
-            message = ZeroFormatterSerializer.Deserialize<Message>(consumed.ToArray());
+            var consumed = buffer.Slice(buffer.Start, eomPos).ToArray();
+            consumed = consumed.SkipWhile(bit => bit == 0).ToArray();
+            
+            message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
 
             buffer = buffer.Slice(consumed.Length + 1);
-            buffer = new ReadOnlySequence<byte>(
-                buffer.ToArray().SkipWhile(bit => bit == 0).ToArray());
             return true;
         }
 
