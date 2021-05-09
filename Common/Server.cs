@@ -102,16 +102,20 @@ namespace Common
             return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
-        private SequencePosition? GetSequencePosition(ref ReadOnlySequence<byte> buffer, byte[] sequence)
+        private int GetSequencePosition(ref ReadOnlySequence<byte> buffer, byte[] sequence)
         {
-            var positions = new List<SequencePosition?>(sequence.Length);
-            foreach (var item in sequence) positions.Add(buffer.PositionOf(item));
+            var positions = new List<int>(sequence.Length);
+            foreach (var item in sequence)
+            {
+                var position = buffer.PositionOf(item);
+                positions.Add(position.HasValue ? position.Value.GetInteger() : 0);
+            }
 
-            var list = positions.Select(position => position.HasValue ? position.Value.GetInteger() : 0);
-            var sequential = !list.OrderBy(item => item).Select((i, j) => i - j).Distinct().Skip(1).Any();
+            var sequential = !positions.OrderBy(position => position)
+                .Select((i, j) => i - j).Distinct().Skip(1).Any();
 
             if (sequential) return positions.Min();
-            return default;
+            return 0;
         }
 
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
@@ -120,13 +124,13 @@ namespace Common
             var eomPos = GetSequencePosition(ref buffer, Message.EOM);
 
             message = default;
-            if (bomPos == null || eomPos == null)
+            if (bomPos == 0 || eomPos == 0)
                 return false;
 
-            var start = bomPos.Value.GetInteger() + Message.BOM.Length + 1;
-            var end = eomPos.Value.GetInteger() + Message.EOM.Length + 1;
+            var start = bomPos + Message.BOM.Length + 1;
+            var end = eomPos + Message.EOM.Length + 1;
 
-            var consumed = buffer.Slice(start, eomPos.Value).ToArray();
+            var consumed = buffer.Slice(start, eomPos).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
 
             buffer = buffer.Slice(end);
