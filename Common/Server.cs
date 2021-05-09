@@ -102,21 +102,19 @@ namespace Common
             return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
-        protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
+        protected override bool TryReadMessage(ReadOnlySequence<byte> buffer, ref int position, out Message message)
         {
-            var nullPos = new SequencePosition();
-            var eomPos = buffer.PositionOf(Message.EOM) ?? nullPos;
+            var start = position;
+            var end = buffer.PositionOf(Message.EOM);
 
             message = default;
-            if (eomPos.Equals(nullPos))
+            if (end == null)
                 return false;
 
-            var consumed = buffer.Slice(buffer.Start, eomPos);
-            message = ZeroFormatterSerializer.Deserialize<Message>(consumed.ToArray());
+            var consumed = buffer.Slice(start, end.Value).ToArray();
+            message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
 
-            buffer = buffer.Slice(consumed.Length + 1);
-            buffer = new ReadOnlySequence<byte>(
-                buffer.ToArray().SkipWhile(bit => bit == 0).ToArray());
+            position = start + consumed.Length + 1;
             return true;
         }
 
