@@ -102,17 +102,21 @@ namespace Common
             return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
-        private int? GetSequencePosition(ReadOnlySequence<byte> buffer, byte[] sequence, int offset = 0)
+        private int? GetSequencePosition(ReadOnlySequence<byte> buffer, byte[] sequence)
         {
             var found = new int[sequence.Length];
             for (var index = 0; index < sequence.Length; index++)
             {
                 var item = sequence[index];
-                var position = buffer.Slice(offset).PositionOf(item);
+                var position = buffer.PositionOf(item);
                 if (position == null) return null;
                 found[index] = position.Value.GetInteger();
-                if (index > 0 && found[index] > found[index - 1] + 1)
-                    return GetSequencePosition(buffer, sequence, offset + found[index] - index);
+                if (index > 0)
+                {
+                    var expected = found[index - 1] + 1;
+                    if (found[index] > expected)
+                    return GetSequencePosition(buffer.Slice(expected), sequence);
+                }
             }
             return found[0];
         }
@@ -124,11 +128,10 @@ namespace Common
             var bomPos = GetSequencePosition(buffer, Message.BOM);
             if (bomPos == null) return false;
 
-            var start = bomPos.Value + Message.BOM.Length;
-
-            var eomPos = GetSequencePosition(buffer, Message.EOM, start);
+            var eomPos = GetSequencePosition(buffer, Message.EOM);
             if (eomPos == null) return false;
 
+            var start = bomPos.Value + Message.BOM.Length;
             var end = eomPos.Value + Message.EOM.Length;
 
             var consumed = buffer.Slice(start, eomPos.Value).ToArray();
