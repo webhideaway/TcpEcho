@@ -110,13 +110,18 @@ namespace Common
                 var item = sequence[index];
                 var position = buffer.PositionOf(item);
                 if (position == null) return null;
-                found[index] = position.Value.GetInteger();
+                var current = position.Value.GetInteger();
                 if (index > 0)
                 {
-                    var expected = found[index - 1] + 1;
-                    if (found[index] > expected)
-                    return GetSequencePosition(buffer.Slice(expected), sequence);
+                    var previous = found[index - 1];
+                    if (current > previous + 1)
+                    {
+                        buffer = buffer.Slice(previous + 1);
+                        return GetSequencePosition(buffer, sequence);
+                    }
                 }
+                found[index] = current;
+                buffer = buffer.Slice(current);
             }
             return found[0];
         }
