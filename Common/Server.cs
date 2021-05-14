@@ -105,24 +105,19 @@ namespace Common
         private int? GetSequencePosition(ReadOnlySequence<byte> buffer, byte[] sequence)
         {
             var found = new int[sequence.Length];
+
             for (var index = 0; index < sequence.Length; index++)
             {
-                var item = sequence[index];
-                var position = buffer.PositionOf(item);
+                var position = buffer.PositionOf(sequence[index]);
                 if (position == null) return null;
-                var current = position.Value.GetInteger();
-                if (index > 0)
+                found[index] = position.Value.GetInteger();
+                if (index > 0 && found[index] > found[index - 1] + 1)
                 {
-                    var previous = found[index - 1];
-                    if (current > previous + 1)
-                    {
-                        buffer = buffer.Slice(previous + 1);
-                        return GetSequencePosition(buffer, sequence);
-                    }
+                    var shift = found[index - 1] + 1;
+                    return shift + GetSequencePosition(buffer.Slice(shift), sequence);
                 }
-                found[index] = current;
-                buffer = buffer.Slice(current);
             }
+
             return found[0];
         }
 
