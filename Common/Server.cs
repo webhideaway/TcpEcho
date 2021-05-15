@@ -113,8 +113,8 @@ namespace Common
                 found[index] = position.Value.GetInteger();
                 if (index > 0 && found[index] > found[index - 1] + 1)
                 {
-                    buffer = buffer.Slice(found[index]);
-                    index = 0;
+                    buffer = buffer.Slice(found[index - 1] + 1);
+                    return GetSequencePosition(buffer, sequence);
                 }
             }
 
