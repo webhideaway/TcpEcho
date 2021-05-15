@@ -108,13 +108,13 @@ namespace Common
 
             for (var index = 0; index < sequence.Length; index++)
             {
-                var position = buffer.Slice(found[index]).PositionOf(sequence[index]);
+                var position = buffer.PositionOf(sequence[index]);
                 if (position == null) return null;
                 found[index] = position.Value.GetInteger();
                 if (index > 0 && found[index] > found[index - 1] + 1)
                 {
-                    var shift = found[index - 1] + 1;
-                    return shift + GetSequencePosition(buffer, sequence);
+                    buffer = buffer.Slice(found[index]);
+                    index = 0;
                 }
             }
 
