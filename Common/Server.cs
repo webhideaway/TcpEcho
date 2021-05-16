@@ -105,18 +105,19 @@ namespace Common
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
             message = default;
-            
-            var bomPos = buffer.ToArray().AsSpan().IndexOf(Message.BOM);
+            var span = buffer.ToArray().AsSpan();
+
+            var bomPos = span.IndexOf(Message.BOM);
             if (bomPos == -1) return false;
 
-            var eomPos = buffer.ToArray().AsSpan().IndexOf(Message.EOM);
+            var eomPos = span.IndexOf(Message.EOM);
             if (eomPos == -1) return false;
 
             var start = bomPos + Message.BOM.Length;
             var end = eomPos + Message.EOM.Length;
             var length = eomPos - start;
 
-            var consumed = buffer.Slice(start, length).ToArray();
+            var consumed = span.Slice(start, length).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
 
             buffer = buffer.Slice(end);
