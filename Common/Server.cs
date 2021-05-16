@@ -114,8 +114,9 @@ namespace Common
 
             var start = bomPos + Message.BOM.Length;
             var end = eomPos + Message.EOM.Length;
+            var length = eomPos - start;
 
-            var consumed = buffer.Slice(start, eomPos).ToArray();
+            var consumed = buffer.Slice(start, length).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
 
             buffer = buffer.Slice(end);
