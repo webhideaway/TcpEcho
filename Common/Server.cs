@@ -117,8 +117,8 @@ namespace Common
             var end = eomPos + Message.EOM.Length;
             var length = eomPos - start;
 
-            var consumed = span.Slice(start, length).ToArray();
-            message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
+            var data = span.Slice(start, length).ToArray();
+            message = ZeroFormatterSerializer.Deserialize<Message>(data);
 
             buffer = buffer.Slice(end);
             return true;

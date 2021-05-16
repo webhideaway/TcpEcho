@@ -16,6 +16,16 @@ namespace TcpEcho
 
             using var server = new Common.Server(localEndPoint);
 
+            server.RegisterHandler<DTO.Person, DTO.Person>(person =>
+            {
+                return new DTO.Person(person.Name.ToLowerInvariant(), person.Age * -1);
+            });
+
+            server.RegisterHandler<DTO.Car, DTO.Car>(car =>
+            {
+                return new DTO.Car(car.Brand.ToLowerInvariant(), car.Age * -1);
+            });
+
             int person_count = 0;
             int car_count = 0;
 
