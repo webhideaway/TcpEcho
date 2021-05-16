@@ -102,39 +102,20 @@ namespace Common
             return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
-        private int? GetSequencePosition(ReadOnlySequence<byte> buffer, byte[] sequence)
-        {
-            var found = new int[sequence.Length];
-
-            for (var index = 0; index < sequence.Length; index++)
-            {
-                var position = buffer.PositionOf(sequence[index]);
-                if (position == null) return null;
-                found[index] = position.Value.GetInteger();
-                if (index > 0 && found[index] > found[index - 1] + 1)
-                {
-                    buffer = buffer.Slice(found[index - 1] + 1);
-                    return GetSequencePosition(buffer, sequence);
-                }
-            }
-
-            return found[0];
-        }
-
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
             message = default;
             
-            var bomPos = GetSequencePosition(buffer, Message.BOM);
-            if (bomPos == null) return false;
+            var bomPos = buffer.ToArray().AsSpan().IndexOf(Message.BOM);
+            if (bomPos == -1) return false;
 
-            var eomPos = GetSequencePosition(buffer, Message.EOM);
-            if (eomPos == null) return false;
+            var eomPos = buffer.ToArray().AsSpan().IndexOf(Message.EOM);
+            if (eomPos == -1) return false;
 
-            var start = bomPos.Value + Message.BOM.Length;
-            var end = eomPos.Value + Message.EOM.Length;
+            var start = bomPos + Message.BOM.Length;
+            var end = eomPos + Message.EOM.Length;
 
-            var consumed = buffer.Slice(start, eomPos.Value).ToArray();
+            var consumed = buffer.Slice(start, eomPos).ToArray();
             message = ZeroFormatterSerializer.Deserialize<Message>(consumed);
 
             buffer = buffer.Slice(end);
