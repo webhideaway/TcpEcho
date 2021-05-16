@@ -27,8 +27,10 @@ namespace TcpEcho
             int person_count = 0;
             int car_count = 0;
 
-            //while (true)
+            while (true)
             {
+                Console.Read();
+
                 stopwatch.Start();
                 foreach (var idx in Enumerable.Range(0, range).
                     AsParallel().WithDegreeOfParallelism(Environment.ProcessorCount).
@@ -65,7 +67,7 @@ namespace TcpEcho
 
                 Console.WriteLine($"Execution: {range / stopwatch.Elapsed.TotalMilliseconds} items/ms");
 
-                Thread.Sleep(random.Next(500, 1500));
+                //Thread.Sleep(random.Next(500, 1500));
             }
         }
     }
