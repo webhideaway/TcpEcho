@@ -22,7 +22,7 @@ namespace TcpEcho
             var random = new Random();
             var stopwatch = new Stopwatch();
 
-            var range = random.Next(5, 15);
+            var range = random.Next(50, 150);
 
             int person_count = 0;
             int car_count = 0;
@@ -31,7 +31,8 @@ namespace TcpEcho
             {
                 Console.Read();
 
-                stopwatch.Start();
+                stopwatch.Restart();
+
                 foreach (var idx in Enumerable.Range(0, range).
                     AsParallel().WithDegreeOfParallelism(Environment.ProcessorCount).
                     WithExecutionMode(ParallelExecutionMode.ForceParallelism))
@@ -63,9 +64,8 @@ namespace TcpEcho
                         await client.PostAsync<DTO.Car>(car);
                     }
                 }
-                stopwatch.Stop();
 
-                Console.WriteLine($"Execution: {range / stopwatch.Elapsed.TotalMilliseconds} items/ms");
+                Console.WriteLine($"Execution: {1000 * range / stopwatch.Elapsed.TotalMilliseconds} items/sec");
 
                 //Thread.Sleep(random.Next(500, 1500));
             }
