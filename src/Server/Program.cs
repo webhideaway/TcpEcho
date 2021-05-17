@@ -1,10 +1,10 @@
-﻿using System;
+﻿using DTO;
+using System;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using ZeroPipeline;
 
-namespace TcpEcho
+namespace Server
 {
     class Program
     {
@@ -14,16 +14,16 @@ namespace TcpEcho
 
             Console.WriteLine("Server listening for requests on local end point: {0}", localEndPoint);
 
-            using var server = new Server(localEndPoint);
+            using var server = new ZeroPipeline.Server(localEndPoint);
 
-            server.RegisterHandler<DTO.Person, DTO.Person>(person =>
+            server.RegisterHandler<Person, Person>(person =>
             {
-                return new DTO.Person(person.Name.ToLowerInvariant(), person.Age * -1);
+                return new Person(person.Name.ToLowerInvariant(), person.Age * -1);
             });
 
-            server.RegisterHandler<DTO.Car, DTO.Car>(car =>
+            server.RegisterHandler<Car, Car>(car =>
             {
-                return new DTO.Car(car.Brand.ToLowerInvariant(), car.Age * -1);
+                return new Car(car.Brand.ToLowerInvariant(), car.Age * -1);
             });
 
             int person_count = 0;
@@ -31,14 +31,14 @@ namespace TcpEcho
 
             await server.ListenAsync(input: request =>
             {
-                if (request.GetType().IsAssignableFrom(typeof(DTO.Person)))
+                if (request.GetType().IsAssignableFrom(typeof(Person)))
                 {
-                    var person = (DTO.Person)request;
+                    var person = (Person)request;
                     Console.WriteLine($"PERSON #{Interlocked.Increment(ref person_count)} [Name = {person.Name}, Age = {person.Age}]");
                 }
-                if (request.GetType().IsAssignableFrom(typeof(DTO.Car)))
+                if (request.GetType().IsAssignableFrom(typeof(Car)))
                 {
-                    var car = (DTO.Car)request;
+                    var car = (Car)request;
                     Console.WriteLine($"CAR #{Interlocked.Increment(ref car_count)} [Brand = {car.Brand}, Age = {car.Age}]");
                 }
             });

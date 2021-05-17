@@ -1,12 +1,12 @@
-﻿using System;
+﻿using DTO;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using ZeroPipeline;
 
-namespace TcpEcho
+namespace Client
 {
     class Program
     {
@@ -18,7 +18,7 @@ namespace TcpEcho
             Console.WriteLine("Client posting requests to remote end point: {0}", remoteEndPoint);
             Console.WriteLine("Client listening for callbacks on callback end point: {0}", callbackEndPoint);
 
-            using var client = new Client(remoteEndPoint, callbackEndPoint);
+            using var client = new ZeroPipeline.Client(remoteEndPoint, callbackEndPoint);
 
             var random = new Random();
             var stopwatch = new Stopwatch();
@@ -40,7 +40,7 @@ namespace TcpEcho
                 {
                     if (idx % 2 == 0)
                     {
-                        var person = new DTO.Person
+                        var person = new Person
                         (
                             name: new string(Enumerable.Range(1, random.Next(5, 15)).
                                 Select(_ => Convert.ToChar(random.Next(65, 90))).ToArray()),
@@ -49,14 +49,14 @@ namespace TcpEcho
 
                         Console.WriteLine($"PERSON #{Interlocked.Increment(ref person_count)} [Name = {person.Name}, Age = {person.Age}]");
 
-                        await client.PostAsync<DTO.Person, DTO.Person>(person, person =>
+                        await client.PostAsync<Person, Person>(person, person =>
                         {
                             Console.WriteLine($"PERSON [RESPONSE] [Name = {person.Name}, Age = {person.Age}]");
                         });
                     }
                     else
                     {
-                        var car = new DTO.Car
+                        var car = new Car
                         (
                             brand: new string(Enumerable.Range(1, random.Next(5, 15)).
                                 Select(_ => Convert.ToChar(random.Next(65, 90))).ToArray()),
@@ -65,7 +65,7 @@ namespace TcpEcho
 
                         Console.WriteLine($"CAR #{Interlocked.Increment(ref car_count)} [Brand = {car.Brand}, Age = {car.Age}]");
 
-                        await client.PostAsync<DTO.Car, DTO.Car>(car, car =>
+                        await client.PostAsync<Car, Car>(car, car =>
                         {
                             Console.WriteLine($"CAR [RESPONSE] [Brand = {car.Brand}, Age = {car.Age}]");
 

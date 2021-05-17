@@ -12,6 +12,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ZeroFormatter.Interfaces\ZeroFormatter.Interfaces.csproj" />
-    <ProjectReference Include="..\ZeroFormatter\ZeroFormatter.csproj" />
   </ItemGroup>
 </Project>
