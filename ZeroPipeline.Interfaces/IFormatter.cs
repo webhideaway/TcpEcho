@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace ZeroPipeline
+namespace ZeroPipeline.Interfaces
 {
     public interface IFormatter : IDisposable
     {

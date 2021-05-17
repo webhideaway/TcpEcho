@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net;
 using ZeroFormatter;
 
-namespace ZeroPipeline
+namespace ZeroPipeline.Interfaces
 {
     [ZeroFormattable]
     public struct Message
@@ -42,7 +42,7 @@ namespace ZeroPipeline
             return Create(typeof(TRequest), rawData, callbackEndPoint);
         }
 
-        internal static Message Create(Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
+        public static Message Create(Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
                 id: Guid.NewGuid().ToString(),

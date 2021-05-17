@@ -1,5 +1,4 @@
-﻿using Common;
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net;
@@ -7,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using ZeroFormatter;
 using ZeroFormatter.Internal;
+using ZeroPipeline.Interfaces;
 
 namespace ZeroPipeline
 {

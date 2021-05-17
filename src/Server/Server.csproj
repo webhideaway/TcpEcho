@@ -8,5 +8,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Common\ZeroPipeline.csproj" />
     <ProjectReference Include="..\..\DTO\DTO.csproj" />
+    <ProjectReference Include="..\..\ZeroFormatter.Interfaces\ZeroFormatter.Interfaces.csproj" />
+    <ProjectReference Include="..\..\ZeroPipeline\ZeroPipeline.csproj" />
+    <ProjectReference Include="..\DTO\DTO.csproj" />
   </ItemGroup>
 </Project>

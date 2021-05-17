@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using ZeroFormatter;
+using ZeroPipeline.Interfaces;
 
 namespace ZeroPipeline
 {

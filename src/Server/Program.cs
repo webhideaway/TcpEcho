@@ -1,8 +1,8 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using ZeroPipeline;
 
 namespace TcpEcho
 {
@@ -14,7 +14,7 @@ namespace TcpEcho
 
             Console.WriteLine("Server listening for requests on local end point: {0}", localEndPoint);
 
-            using var server = new Common.Server(localEndPoint);
+            using var server = new Server(localEndPoint);
 
             server.RegisterHandler<DTO.Person, DTO.Person>(person =>
             {
@@ -29,7 +29,8 @@ namespace TcpEcho
             int person_count = 0;
             int car_count = 0;
 
-            await server.ListenAsync(input: request => {
+            await server.ListenAsync(input: request =>
+            {
                 if (request.GetType().IsAssignableFrom(typeof(DTO.Person)))
                 {
                     var person = (DTO.Person)request;

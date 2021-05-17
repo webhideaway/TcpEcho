@@ -2,18 +2,16 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using ZeroFormatter;
 using ZeroFormatter.Internal;
-using ZeroPipeline;
+using ZeroPipeline.Interfaces;
 
-namespace Common
+namespace ZeroPipeline
 {
     public class Server : Processor, IDisposable
     {
@@ -56,8 +54,19 @@ namespace Common
             var socket = await _listenSocket.AcceptAsync();
             var stream = new NetworkStream(socket);
             return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: true));
+
+            /* Unmerged change from project 'ZeroPipeline (net5.0)'
+            Before:
+                    }
+
+                    private void Handle(Message message, Action<object> handler)
+            After:
+                    }
+
+                    private void Handle(Message message, Action<object> handler)
+            */
         }
-        
+
         private void Handle(Message message, Action<object> handler)
         {
             if (handler == null) return;
@@ -72,10 +81,11 @@ namespace Common
             while (true)
             {
                 var reader = await AcceptAsync();
-                await ProcessMessagesAsync(reader, 
+                await ProcessMessagesAsync(reader,
                     message => Handle(message, input),
-                    messages => {
-                        foreach (var message in messages ?? new Message[] { }) 
+                    messages =>
+                    {
+                        foreach (var message in messages ?? new Message[] { })
                             Handle(message, output);
                     }
                 );

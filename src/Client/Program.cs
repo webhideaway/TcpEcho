@@ -49,7 +49,7 @@ namespace TcpEcho
 
                         Console.WriteLine($"PERSON #{Interlocked.Increment(ref person_count)} [Name = {person.Name}, Age = {person.Age}]");
 
-                        await client.PostAsync<DTO.Person, DTO.Person>(person, person => 
+                        await client.PostAsync<DTO.Person, DTO.Person>(person, person =>
                         {
                             Console.WriteLine($"PERSON [RESPONSE] [Name = {person.Name}, Age = {person.Age}]");
                         });
@@ -65,7 +65,7 @@ namespace TcpEcho
 
                         Console.WriteLine($"CAR #{Interlocked.Increment(ref car_count)} [Brand = {car.Brand}, Age = {car.Age}]");
 
-                        await client.PostAsync<DTO.Car, DTO.Car>(car, car => 
+                        await client.PostAsync<DTO.Car, DTO.Car>(car, car =>
                         {
                             Console.WriteLine($"CAR [RESPONSE] [Brand = {car.Brand}, Age = {car.Age}]");
 

@@ -284,16 +284,16 @@ namespace ZeroFormatter.Formatters
             byteSize = 1;
             var hasValue = BinaryUtil.ReadBoolean(ref bytes, offset);
 
-/* Unmerged change from project 'ZeroFormatter (netcoreapp2.1)'
-Before:
-            if (!hasValue) return null;
-            
-            offset += 1;
-After:
-            if (!hasValue) return null;
+            /* Unmerged change from project 'ZeroFormatter (netcoreapp2.1)'
+            Before:
+                        if (!hasValue) return null;
 
-            offset += 1;
-*/
+                        offset += 1;
+            After:
+                        if (!hasValue) return null;
+
+                        offset += 1;
+            */
             if (!hasValue) return null;
 
             offset += 1;
