@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "src\Client\Client
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Server", "src\Server\Server.csproj", "{35542112-9549-407F-8609-833E87F4DBB7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{DD56EF13-6A78-4C39-B9E3-16DF6612CADF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroPipeline", "Common\ZeroPipeline.csproj", "{DD56EF13-6A78-4C39-B9E3-16DF6612CADF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZeroFormatter.Interfaces", "ZeroFormatter.Interfaces\ZeroFormatter.Interfaces.csproj", "{0A99356C-300C-4796-B229-118BDE85E909}"
 EndProject

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
@@ -7,11 +8,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Common
+namespace ZeroPipeline
 {
     public abstract class Processor : IProcessor
     {
-        public async Task ProcessMessagesAsync(PipeReader reader, 
+        public async Task ProcessMessagesAsync(PipeReader reader,
             Action<Message> input = null, Action<Message[]> outputs = null)
         {
             try
@@ -37,7 +38,7 @@ namespace Common
                         }
 
                         if (readResult.IsCompleted)
-                             break;
+                            break;
                     }
                     finally
                     {

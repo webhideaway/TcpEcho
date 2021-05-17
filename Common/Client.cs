@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common;
+using System;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 using ZeroFormatter;
 using ZeroFormatter.Internal;
 
-namespace Common
+namespace ZeroPipeline
 {
     public class Client : IDisposable
     {
@@ -25,7 +26,7 @@ namespace Common
 
             _remoteSocket.Connect(remoteEndPoint);
             var remoteStream = new NetworkStream(_remoteSocket);
-            
+
             _remoteWriter = PipeWriter.Create(remoteStream, new StreamPipeWriterOptions(leaveOpen: true));
 
             _callbackEndPoint = callbackEndPoint;
@@ -37,18 +38,18 @@ namespace Common
 
         private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request)
         {
-            var raw = _formatter.Serialize<TRequest>(request);
+            var raw = _formatter.Serialize(request);
             var message = Message.Create<TRequest>(raw, _callbackEndPoint);
             var data = new byte[] { };
             BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
-            ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, message);
+            ZeroFormatterSerializer.Serialize(ref data, Message.BOM.Length, message);
             BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
             return data;
         }
 
         public async Task PostAsync<TRequest>(TRequest request)
         {
-            var data = ProcessRequest<TRequest>(request);
+            var data = ProcessRequest(request);
             await _remoteWriter.WriteAsync(data).AsTask();
         }
 
@@ -69,10 +70,10 @@ namespace Common
 
         public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
         {
-            var data = ProcessRequest<TRequest>(request);
+            var data = ProcessRequest(request);
             await Task.WhenAll(
                 _remoteWriter.WriteAsync(data).AsTask(),
-                CallbackTask<TResponse>(handler)
+                CallbackTask(handler)
             );
         }
 

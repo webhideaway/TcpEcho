@@ -2,7 +2,7 @@
 using System.IO;
 using ZeroFormatter;
 
-namespace Common
+namespace ZeroPipeline
 {
     public class DefaultFormatter : IFormatter
     {
@@ -25,7 +25,7 @@ namespace Common
 
         public byte[] Serialize<T>(T value)
         {
-            return ZeroFormatterSerializer.Serialize<T>(value);
+            return ZeroFormatterSerializer.Serialize(value);
         }
 
         public byte[] Serialize(Type type, object value)
@@ -35,7 +35,7 @@ namespace Common
 
         public void Serialize<T>(Stream stream, T value)
         {
-            ZeroFormatterSerializer.Serialize<T>(stream, value);
+            ZeroFormatterSerializer.Serialize(stream, value);
         }
 
         protected virtual void Dispose(bool disposing)

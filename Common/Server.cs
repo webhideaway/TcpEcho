@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using ZeroFormatter;
 using ZeroFormatter.Internal;
+using ZeroPipeline;
 
 namespace Common
 {

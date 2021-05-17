@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using ZeroPipeline;
 
 namespace TcpEcho
 {
@@ -17,7 +18,7 @@ namespace TcpEcho
             Console.WriteLine("Client posting requests to remote end point: {0}", remoteEndPoint);
             Console.WriteLine("Client listening for callbacks on callback end point: {0}", callbackEndPoint);
 
-            using var client = new Common.Client(remoteEndPoint, callbackEndPoint);
+            using var client = new Client(remoteEndPoint, callbackEndPoint);
 
             var random = new Random();
             var stopwatch = new Stopwatch();

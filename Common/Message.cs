@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net;
 using ZeroFormatter;
 
-namespace Common
+namespace ZeroPipeline
 {
     [ZeroFormattable]
     public struct Message
