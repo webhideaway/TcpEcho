@@ -53,18 +53,8 @@ namespace ZeroPipeline
         {
             var socket = await _listenSocket.AcceptAsync();
             var stream = new NetworkStream(socket);
-            return PipeReader.Create(stream, new StreamPipeReaderOptions(leaveOpen: true));
-
-            /* Unmerged change from project 'ZeroPipeline (net5.0)'
-            Before:
-                    }
-
-                    private void Handle(Message message, Action<object> handler)
-            After:
-                    }
-
-                    private void Handle(Message message, Action<object> handler)
-            */
+            var reader = new StreamPipeReaderOptions(leaveOpen: true);
+            return PipeReader.Create(stream, reader);
         }
 
         private void Handle(Message message, Action<object> handler)
@@ -110,7 +100,8 @@ namespace ZeroPipeline
             callbackSocket.Connect(callbackEndPoint);
             var callbackStream = new NetworkStream(callbackSocket);
 
-            return PipeWriter.Create(callbackStream, new StreamPipeWriterOptions(leaveOpen: true));
+            var callbackWriter = new StreamPipeWriterOptions(leaveOpen: true);
+            return PipeWriter.Create(callbackStream, callbackWriter);
         }
 
         protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
