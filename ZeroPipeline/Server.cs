@@ -131,22 +131,25 @@ namespace ZeroPipeline
             var type = Type.GetType(message.TypeName);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
-                var request = _formatter.Deserialize(type, message.RawData);
                 return await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
                     Task.Factory.StartNew(() =>
                     {
-                        object response = null;
                         try
                         {
-                            response = handler.DynamicInvoke(request);
+                            var type = Type.GetType(message.TypeName);
+                            var request = _formatter.Deserialize(type, message.RawData);
+                            var response = handler.DynamicInvoke(request);
+                            var raw = _formatter.Serialize(type, response);
+                            return Message.Create(type, raw);
                         }
                         catch (Exception ex)
                         {
-                            response = ex.GetBaseException();
+                            var response = ex.GetBaseException();
+                            var type = response.GetType();
+                            var info = $"{response.Message}{Environment.NewLine}{response.StackTrace}";
+                            var raw = _formatter.Serialize(type, info);
+                            return Message.Create(type, raw);
                         }
-                        var type = response.GetType();
-                        var raw = _formatter.Serialize(type, response);
-                        return Message.Create(type, raw);
                     })
                 ));
             }

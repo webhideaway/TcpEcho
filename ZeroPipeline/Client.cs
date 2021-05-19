@@ -53,27 +53,28 @@ namespace ZeroPipeline
             await _remoteWriter.WriteAsync(data).AsTask();
         }
 
-        private Task CallbackTask<TResponse>(Action<TResponse> handler)
+        private Task CallbackTask<TResponse>(Action<TResponse> responseHandler, Action<string> exceptionHandler = null)
         {
-            return _callbackListener == null || handler == null ? Task.CompletedTask :
+            return _callbackListener == null ? Task.CompletedTask : 
                 _callbackListener.ListenAsync(output: response =>
                 {
                     if (response.GetType().IsAssignableFrom(typeof(Exception)))
-                        throw (Exception)response;
+                        exceptionHandler?.Invoke((string)response);
                     else if (response.GetType().IsAssignableFrom(typeof(TResponse)))
-                        handler((TResponse)response);
+                        responseHandler?.Invoke((TResponse)response);
                     else
                         throw new InvalidDataException($"Unexpected data type received {response.GetType()}");
                 }
             );
         }
 
-        public async Task PostAsync<TRequest, TResponse>(TRequest request, Action<TResponse> handler)
+        public async Task PostAsync<TRequest, TResponse>(TRequest request, 
+            Action<TResponse> responseHandler, Action<string> exceptionHandler = null)
         {
             var data = ProcessRequest(request);
             await Task.WhenAll(
                 _remoteWriter.WriteAsync(data).AsTask(),
-                CallbackTask(handler)
+                CallbackTask(responseHandler, exceptionHandler)
             );
         }
 
