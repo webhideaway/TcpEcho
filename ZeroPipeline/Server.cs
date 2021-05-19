@@ -6,6 +6,7 @@ using System.IO.Pipelines;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using ZeroFormatter;
 using ZeroFormatter.Internal;
@@ -61,7 +62,9 @@ namespace ZeroPipeline
         {
             if (handler == null) return;
             var type = Type.GetType(message.TypeName);
-            var data = _formatter.Deserialize(type, message.RawData);
+            var data = type.IsAssignableFrom(typeof(Exception))
+                ? Encoding.ASCII.GetString(message.RawData)
+                : _formatter.Deserialize(type, message.RawData);
             handler(data);
         }
 
@@ -147,7 +150,7 @@ namespace ZeroPipeline
                             var response = ex.GetBaseException();
                             var type = response.GetType();
                             var info = $"{response.Message}{Environment.NewLine}{response.StackTrace}";
-                            var raw = _formatter.Serialize(type, info);
+                            var raw = Encoding.ASCII.GetBytes(info);
                             return Message.Create(type, raw);
                         }
                     })
