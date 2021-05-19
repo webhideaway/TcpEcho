@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Pipelines;
 using System.Net;
@@ -36,20 +37,24 @@ namespace ZeroPipeline
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
         }
 
-        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request)
+        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request, Action<string> identifierHandler)
         {
             var raw = _formatter.Serialize(request);
             var message = Message.Create<TRequest>(raw, _callbackEndPoint);
+            identifierHandler?.Invoke(message.Id);
+
             var data = new byte[] { };
+
             BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
             ZeroFormatterSerializer.Serialize(ref data, Message.BOM.Length, message);
             BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
+
             return data;
         }
 
-        public async Task PostAsync<TRequest>(TRequest request)
+        public async Task PostAsync<TRequest>(TRequest request, Action<string> identifierHandler)
         {
-            var data = ProcessRequest(request);
+            var data = ProcessRequest(request, identifierHandler);
             await _remoteWriter.WriteAsync(data).AsTask();
         }
 
@@ -71,7 +76,8 @@ namespace ZeroPipeline
         public async Task PostAsync<TRequest, TResponse>(TRequest request, 
             Action<TResponse> responseHandler, Action<string> exceptionHandler = null)
         {
-            var data = ProcessRequest(request);
+            //TO DO - provide id matching outout
+            var data = ProcessRequest(request, id => { });
             await Task.WhenAll(
                 _remoteWriter.WriteAsync(data).AsTask(),
                 CallbackTask(responseHandler, exceptionHandler)

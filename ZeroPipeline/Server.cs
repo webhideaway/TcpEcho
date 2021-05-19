@@ -131,6 +131,7 @@ namespace ZeroPipeline
 
         protected override async Task<Message[]> ProcessMessageAsync(Message message)
         {
+            var id = message.Id;
             var type = Type.GetType(message.TypeName);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
@@ -143,7 +144,7 @@ namespace ZeroPipeline
                             var request = _formatter.Deserialize(type, message.RawData);
                             var response = handler.DynamicInvoke(request);
                             var raw = _formatter.Serialize(type, response);
-                            return Message.Create(type, raw);
+                            return Message.Create(id, type, raw);
                         }
                         catch (Exception ex)
                         {
@@ -151,7 +152,7 @@ namespace ZeroPipeline
                             var type = response.GetType();
                             var info = $"{response.Message}{Environment.NewLine}{response.StackTrace}";
                             var raw = Encoding.ASCII.GetBytes(info);
-                            return Message.Create(type, raw);
+                            return Message.Create(id, type, raw);
                         }
                     })
                 ));

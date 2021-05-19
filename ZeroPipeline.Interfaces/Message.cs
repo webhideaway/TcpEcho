@@ -37,15 +37,15 @@ namespace ZeroPipeline.Interfaces
         [Index(4)]
         public readonly byte[] RawData;
 
-        public static Message Create<TRequest>(byte[] rawData, IPEndPoint callbackEndPoint = null)
+        public static Message Create<TRequest>(byte[] rawData, IPEndPoint callbackEndPoint)
         {
-            return Create(typeof(TRequest), rawData, callbackEndPoint);
+            return Create(Guid.NewGuid().ToString(), typeof(TRequest), rawData, callbackEndPoint);
         }
 
-        public static Message Create(Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
+        public static Message Create(string id, Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
-                id: Guid.NewGuid().ToString(),
+                id: id,
                 typeName: $"{type.FullName}, {type.Assembly.FullName}",
                 callbackAddress: callbackEndPoint?.Address.GetAddressBytes(),
                 callbackPort: callbackEndPoint?.Port ?? 0,
