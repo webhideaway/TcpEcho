@@ -19,6 +19,8 @@ namespace ZeroPipeline
         private bool _disposedValue;
         private readonly IPEndPoint _callbackEndPoint;
         private readonly IFormatter _formatter;
+        private readonly Task _listenerTask;
+        private ConcurrentDictionary<string, Task<object[]>> _callbackTasks = new();
 
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
@@ -34,14 +36,19 @@ namespace ZeroPipeline
             _formatter = formatter ?? new DefaultFormatter();
 
             if (_callbackEndPoint != null)
+            {
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
+                _listenerTask = _callbackListener.ListenAsync(output: (callbackId, responses) => {
+                    _callbackTasks.TryAdd(callbackId, Task<object[]>.Factory.StartNew(() => responses));
+                });
+            }
         }
 
-        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request, Action<string> identifierHandler)
+        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request, out string id)
         {
             var raw = _formatter.Serialize(request);
             var message = Message.Create<TRequest>(raw, _callbackEndPoint);
-            identifierHandler?.Invoke(message.Id);
+            id = message.Id;
 
             var data = new byte[] { };
 
@@ -52,16 +59,21 @@ namespace ZeroPipeline
             return data;
         }
 
-        public async Task PostAsync<TRequest>(TRequest request, Action<string> identifierHandler)
+        public async Task<string> PostAsync<TRequest>(TRequest request)
         {
-            var data = ProcessRequest(request, identifierHandler);
-            await _remoteWriter.WriteAsync(data).AsTask();
+            var data = ProcessRequest(request, out string id);
+            await _remoteWriter.WriteAsync(data);
+            return id;
         }
 
-        private Task CallbackTask<TResponse>(Action<TResponse> responseHandler, Action<string> exceptionHandler = null)
+        public async Task PostAsync<TRequest, TResponse>(TRequest request, 
+            Action<TResponse> responseHandler, Action<string> exceptionHandler = null)
         {
-            return _callbackListener == null ? Task.CompletedTask : 
-                _callbackListener.ListenAsync(output: response =>
+            var id = await PostAsync(request);
+            if (_callbackTasks.TryGetValue(id, out Task<object[]> callbackTask))
+            {
+                var responses = await callbackTask;
+                foreach (var response in responses)
                 {
                     if (response.GetType().IsAssignableFrom(typeof(Exception)))
                         exceptionHandler?.Invoke((string)response);
@@ -70,18 +82,7 @@ namespace ZeroPipeline
                     else
                         throw new InvalidDataException($"Unexpected data type received {response.GetType()}");
                 }
-            );
-        }
-
-        public async Task PostAsync<TRequest, TResponse>(TRequest request, 
-            Action<TResponse> responseHandler, Action<string> exceptionHandler = null)
-        {
-            //TO DO - provide id matching outout
-            var data = ProcessRequest(request, id => { });
-            await Task.WhenAll(
-                _remoteWriter.WriteAsync(data).AsTask(),
-                CallbackTask(responseHandler, exceptionHandler)
-            );
+            }
         }
 
         protected virtual void Dispose(bool disposing)
@@ -94,6 +95,7 @@ namespace ZeroPipeline
                     _remoteSocket?.Dispose();
                     _formatter?.Dispose();
                     _callbackListener?.Dispose();
+                    _listenerTask?.Dispose();
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer

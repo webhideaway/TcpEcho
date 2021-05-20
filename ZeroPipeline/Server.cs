@@ -58,28 +58,26 @@ namespace ZeroPipeline
             return PipeReader.Create(stream, reader);
         }
 
-        private void Handle(Message message, Action<object> handler)
+        private object ProcessMessage(Message message)
         {
-            if (handler == null) return;
             var type = Type.GetType(message.TypeName);
-            var data = type.IsAssignableFrom(typeof(Exception))
+            return type.IsAssignableFrom(typeof(Exception))
                 ? Encoding.ASCII.GetString(message.RawData)
                 : _formatter.Deserialize(type, message.RawData);
-            handler(data);
         }
 
         public async Task ListenAsync(
-            Action<object> input = null, Action<object> output = null)
+            Action<string, object> input = null, Action<string, object[]> output = null)
         {
             while (true)
             {
                 var reader = await AcceptAsync();
                 await ProcessMessagesAsync(reader,
-                    message => Handle(message, input),
-                    messages =>
+                    message => input?.Invoke(message.Id, ProcessMessage(message)),
+                    messages => 
                     {
-                        foreach (var message in messages ?? new Message[] { })
-                            Handle(message, output);
+                        foreach (var group in messages.GroupBy(message => message.Id))
+                            output?.Invoke(group.Key, group.Select(message => ProcessMessage(message)).ToArray());
                     }
                 );
             }
