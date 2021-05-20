@@ -38,8 +38,8 @@ namespace ZeroPipeline
             if (_callbackEndPoint != null)
             {
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-                _listenerTask = _callbackListener.ListenAsync(output: (callbackId, responses) => {
-                    _callbackTasks.TryAdd(callbackId, Task<object[]>.Factory.StartNew(() => responses));
+                _listenerTask = _callbackListener.ListenAsync(output: (id, responses) => {
+                    _callbackTasks.TryAdd(id, Task<object[]>.Factory.StartNew(() => responses));
                 });
             }
         }
@@ -70,7 +70,7 @@ namespace ZeroPipeline
             Action<TResponse> responseHandler, Action<string> exceptionHandler = null)
         {
             var id = await PostAsync(request);
-            if (_callbackTasks.TryGetValue(id, out Task<object[]> callbackTask))
+            if (_callbackTasks.TryRemove(id, out Task<object[]> callbackTask))
             {
                 var responses = await callbackTask;
                 foreach (var response in responses)
