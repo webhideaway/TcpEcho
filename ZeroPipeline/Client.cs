@@ -13,16 +13,43 @@ namespace ZeroPipeline
 {
     public class Client : IDisposable
     {
-        private readonly Socket _remoteSocket;
-        private readonly PipeWriter _remoteWriter;
+        private Socket _remoteSocket;
+        private PipeWriter _remoteWriter;
         private Server _callbackListener;
         private bool _disposedValue;
-        private readonly IPEndPoint _callbackEndPoint;
-        private readonly IFormatter _formatter;
-        private readonly Task _listenerTask;
-        private ConcurrentDictionary<string, BlockingCollection<object>> _callbackResponses = new();
+        private IPEndPoint _callbackEndPoint;
+        private IFormatter _formatter;
+        private Task _listenerTask;
+        private static ConcurrentDictionary<string, BlockingCollection<object>> _callbackResponses = new();
 
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
+        {
+            SetRemoteWriter(remoteEndPoint);
+            _formatter = formatter ?? new DefaultFormatter();
+            SetCallbackListener(callbackEndPoint);
+        }
+
+        private void SetCallbackListener(IPEndPoint callbackEndPoint)
+        {
+            _callbackEndPoint = callbackEndPoint;
+
+            if (_callbackEndPoint != null)
+            {
+                _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
+                _listenerTask = _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
+                {
+                    if (_callbackResponses.TryGetValue(id,
+                        out BlockingCollection<object> callbackResponses))
+                    {
+                        callbackResponses.TryAdd(callbackResponse);
+                        if (callbackResponses.Count == count)
+                            callbackResponses.CompleteAdding();
+                    }
+                });
+            }
+        }
+
+        private void SetRemoteWriter(IPEndPoint remoteEndPoint)
         {
             _remoteSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _remoteSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -31,25 +58,6 @@ namespace ZeroPipeline
             var remoteStream = new NetworkStream(_remoteSocket);
 
             _remoteWriter = PipeWriter.Create(remoteStream, new StreamPipeWriterOptions(leaveOpen: true));
-
-            _callbackEndPoint = callbackEndPoint;
-            _formatter = formatter ?? new DefaultFormatter();
-
-            if (_callbackEndPoint != null)
-            {
-                _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-                _listenerTask = Task.Factory.StartNew(async () =>  
-                    await _callbackListener.ListenAsync(input: (id, callbackResponse, count) => {
-                        if (_callbackResponses.TryGetValue(id,
-                            out BlockingCollection<object> callbackResponses))
-                        {
-                            callbackResponses.TryAdd(callbackResponse);
-                            if (callbackResponses.Count == count)
-                                callbackResponses.CompleteAdding();
-                        }
-                    })
-                );
-            }
         }
 
         private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request, out string id)
@@ -67,7 +75,7 @@ namespace ZeroPipeline
             return data;
         }
 
-        private async Task<string> PostAsync<TRequest>(TRequest request)
+        private async Task PostAsync<TRequest>(TRequest request, Action<BlockingCollection<object>> handler)
         {
             var data = ProcessRequest(request, out string id);
             var callbackResponses = new BlockingCollection<object>();
@@ -77,19 +85,17 @@ namespace ZeroPipeline
                     callbackResponses.CompleteAdding();
             }
             await _remoteWriter.WriteAsync(data);
-            return id;
+            handler?.Invoke(callbackResponses);
         }
 
         public async Task PostAsync<TRequest>(TRequest request, Action<Type, object> responseHandler = null)
         {
-            var id = await PostAsync(request);
-            if (_callbackResponses.TryRemove(id, 
-                out BlockingCollection<object> callbackResponses))
+            await PostAsync(request, callbackResponses =>
             {
                 var responses = callbackResponses.GetConsumingEnumerable();
                 foreach (var response in responses)
                     responseHandler?.Invoke(response.GetType(), response);
-            }
+            });
         }
 
         protected virtual void Dispose(bool disposing)
