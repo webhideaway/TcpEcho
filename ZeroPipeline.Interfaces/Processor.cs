@@ -27,7 +27,7 @@ namespace ZeroPipeline.Interfaces
                         {
                             input?.Invoke(request);
                             var writer = GetWriter(request);
-                            if (!writer.Equals(default))
+                            if (writer != null)
                             {
                                 var responses = await ProcessRequestAsync(request);
                                 var count = responses.Length;
