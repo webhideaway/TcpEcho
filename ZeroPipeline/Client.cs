@@ -19,36 +19,17 @@ namespace ZeroPipeline
         private bool _disposedValue;
         private IPEndPoint _callbackEndPoint;
         private IFormatter _formatter;
-        private Task _listenerTask;
         private static ConcurrentDictionary<string, BlockingCollection<object>> _callbackResponses = new();
 
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
             SetRemoteWriter(remoteEndPoint);
+            
             _formatter = formatter ?? new DefaultFormatter();
-            _listenerTask = SetCallbackListenerAsync(callbackEndPoint);
-        }
-
-        private async Task SetCallbackListenerAsync(IPEndPoint callbackEndPoint)
-        {
             _callbackEndPoint = callbackEndPoint;
-            if (_callbackEndPoint == null) return;
- 
-            _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-            while (true)
-            {
-                await _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
-                    {
-                        if (_callbackResponses.TryGetValue(id,
-                            out BlockingCollection<object> callbackResponses))
-                        {
-                            callbackResponses.TryAdd(callbackResponse);
-                            if (callbackResponses.Count == count)
-                                callbackResponses.CompleteAdding();
-                        }
-                    }
-                );
-            }
+
+            if (_callbackEndPoint != null) 
+                _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
         }
 
         private void SetRemoteWriter(IPEndPoint remoteEndPoint)
@@ -92,15 +73,27 @@ namespace ZeroPipeline
 
         public async Task PostAsync<TRequest>(TRequest request, Action<Type, object> responseHandler = null)
         {
-            await PostAsync(request, (id, callbackResponses) =>
-            {
-                using (callbackResponses)
+            await Task.WhenAll(
+                PostAsync(request, (id, callbackResponses) =>
                 {
-                    var responses = callbackResponses.GetConsumingEnumerable();
-                    foreach (var response in responses)
-                        responseHandler?.Invoke(response.GetType(), response);
-                }
-            });
+                    using (callbackResponses)
+                    {
+                        var responses = callbackResponses.GetConsumingEnumerable();
+                        foreach (var response in responses)
+                            responseHandler?.Invoke(response.GetType(), response);
+                    }
+                }),
+                _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
+                {
+                    if (_callbackResponses.TryGetValue(id,
+                        out BlockingCollection<object> callbackResponses))
+                    {
+                        callbackResponses.TryAdd(callbackResponse);
+                        if (callbackResponses.Count == count)
+                            callbackResponses.CompleteAdding();
+                    }
+                })
+            );
         }
 
         protected virtual void Dispose(bool disposing)
@@ -113,7 +106,6 @@ namespace ZeroPipeline
                     _remoteSocket?.Dispose();
                     _formatter?.Dispose();
                     _callbackListener?.Dispose();
-                    _listenerTask?.Dispose();
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
