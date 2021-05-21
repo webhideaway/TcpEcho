@@ -26,28 +26,24 @@ namespace ZeroPipeline
         {
             SetRemoteWriter(remoteEndPoint);
             _formatter = formatter ?? new DefaultFormatter();
-            SetCallbackListener(callbackEndPoint);
+            _listenerTask = SetCallbackListenerAsync(callbackEndPoint);
         }
 
-        private void SetCallbackListener(IPEndPoint callbackEndPoint)
+        private async Task SetCallbackListenerAsync(IPEndPoint callbackEndPoint)
         {
             _callbackEndPoint = callbackEndPoint;
             if (_callbackEndPoint == null) return;
  
             _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-            _listenerTask = Task.Factory.StartNew(async () =>
+            await _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
                 {
-                    await _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
-                        {
-                            if (_callbackResponses.TryGetValue(id,
-                                out BlockingCollection<object> callbackResponses))
-                            {
-                                callbackResponses.TryAdd(callbackResponse);
-                                if (callbackResponses.Count == count)
-                                    callbackResponses.CompleteAdding();
-                            }
-                        }
-                    );
+                    if (_callbackResponses.TryGetValue(id,
+                        out BlockingCollection<object> callbackResponses))
+                    {
+                        callbackResponses.TryAdd(callbackResponse);
+                        if (callbackResponses.Count == count)
+                            callbackResponses.CompleteAdding();
+                    }
                 }
             );
         }
