@@ -155,7 +155,7 @@ namespace ZeroPipeline
                     })
                 ));
             }
-            return default;
+            return new Message[] { };
         }
 
         protected override async IAsyncEnumerable<FlushResult> WriteMessagesAsync(Message input, params Message[] outputs)
