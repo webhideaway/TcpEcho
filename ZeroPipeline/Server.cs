@@ -67,13 +67,13 @@ namespace ZeroPipeline
         }
 
         public async Task ListenAsync(
-            Action<string, object> input = null, Action<string, object, bool> output = null)
+            Action<string, object, int> input = null, Action<string, object, bool> output = null)
         {
             while (true)
             {
                 var reader = await AcceptAsync();
                 await ProcessMessagesAsync(reader,
-                    message => input?.Invoke(message.Id, ProcessMessage(message)),
+                    message => input?.Invoke(message.Id, ProcessMessage(message), message.Count),
                     (message, done) => output?.Invoke(message.Id, ProcessMessage(message), done)
                 );
             }
@@ -129,7 +129,9 @@ namespace ZeroPipeline
             var type = Type.GetType(request.TypeName);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
-                return await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
+                var invocationList = handlers.GetInvocationList();
+                var count = invocationList.Length;
+                return await Task.WhenAll(invocationList.Select(handler =>
                     Task.Factory.StartNew(() =>
                     {
                         try
@@ -138,7 +140,7 @@ namespace ZeroPipeline
                             var input = _formatter.Deserialize(type, request.RawData);
                             var output = handler.DynamicInvoke(input);
                             var raw = _formatter.Serialize(type, output);
-                            return Message.Create(id, type, raw);
+                            return Message.Create(id, count, type, raw);
                         }
                         catch (Exception ex)
                         {
@@ -146,7 +148,7 @@ namespace ZeroPipeline
                             var type = exception.GetType();
                             var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
                             var raw = Encoding.ASCII.GetBytes(output);
-                            return Message.Create(id, type, raw);
+                            return Message.Create(id, count, type, raw);
                         }
                     })
                 ));

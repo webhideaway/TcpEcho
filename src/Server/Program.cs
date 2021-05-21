@@ -26,20 +26,17 @@ namespace Server
                 return new Car(car.Brand.ToLowerInvariant(), car.Age * -1);
             });
 
-            int person_count = 0;
-            int car_count = 0;
-
-            await server.ListenAsync(input: (id, request) =>
+            await server.ListenAsync(input: (id, request, count) =>
             {
                 if (request.GetType().IsAssignableFrom(typeof(Person)))
                 {
                     var person = (Person)request;
-                    Console.WriteLine($"PERSON #{Interlocked.Increment(ref person_count)} [Name = {person.Name}, Age = {person.Age}]");
+                    Console.WriteLine($"PERSON [REQUEST] [Name = {person.Name}, Age = {person.Age}]");
                 }
                 if (request.GetType().IsAssignableFrom(typeof(Car)))
                 {
                     var car = (Car)request;
-                    Console.WriteLine($"CAR #{Interlocked.Increment(ref car_count)} [Brand = {car.Brand}, Age = {car.Age}]");
+                    Console.WriteLine($"CAR [REQUEST] [Brand = {car.Brand}, Age = {car.Age}]");
                 }
             });
         }

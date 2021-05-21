@@ -38,12 +38,13 @@ namespace ZeroPipeline
             if (_callbackEndPoint != null)
             {
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-                _listenerTask = _callbackListener.ListenAsync(output: (id, response, done) => {
+                _listenerTask = _callbackListener.ListenAsync(input: (id, callbackResponse, count) => {
                     if (_callbackResponses.TryGetValue(id,
                         out BlockingCollection<object> callbackResponses))
                     {
-                        callbackResponses.TryAdd(response);
-                        if (done) callbackResponses.CompleteAdding();
+                        callbackResponses.TryAdd(callbackResponse);
+                        if (callbackResponses.Count == count)
+                            callbackResponses.CompleteAdding();
                     }
                 });
             }
