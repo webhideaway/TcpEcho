@@ -9,7 +9,7 @@ namespace ZeroPipeline.Interfaces
     public abstract class Processor : IProcessor
     {
         public async Task ProcessMessagesAsync(PipeReader reader,
-            Action<Message> input = null, Action<Message[]> outputs = null)
+            Action<Message> input = null, Action<Message, bool> output = null)
         {
             try
             {
@@ -23,14 +23,21 @@ namespace ZeroPipeline.Interfaces
                         if (readResult.IsCanceled)
                             break;
 
-                        while (TryReadMessage(ref buffer, out Message message))
+                        while (TryReadRequest(ref buffer, out Message request))
                         {
-                            input?.Invoke(message);
-                            var messages = await ProcessMessageAsync(message);
-                            outputs?.Invoke(messages);
-                            await foreach (var writeResult in WriteMessagesAsync(message, messages))
-                                if (writeResult.IsCanceled || writeResult.IsCompleted)
-                                    continue;
+                            input?.Invoke(request);
+                            var writer = GetWriter(request);
+                            if (!writer.Equals(default))
+                            {
+                                var responses = await ProcessRequestAsync(request);
+                                var count = responses.Length;
+                                for (var index = 0; index < count; index++)
+                                    output?.Invoke(responses[index], index == count - 1);
+
+                                await foreach (var writeResult in WriteResponsesAsync(writer, responses))
+                                    if (writeResult.IsCanceled || writeResult.IsCompleted)
+                                        continue;
+                            }
                         }
 
                         if (readResult.IsCompleted)
@@ -50,10 +57,10 @@ namespace ZeroPipeline.Interfaces
 
         public abstract PipeWriter GetWriter(Message message);
 
-        protected abstract bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message);
+        protected abstract bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request);
 
-        protected abstract Task<Message[]> ProcessMessageAsync(Message message);
+        protected abstract Task<Message[]> ProcessRequestAsync(Message request);
 
-        protected abstract IAsyncEnumerable<FlushResult> WriteMessagesAsync(Message input, params Message[] outputs);
+        protected abstract IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses);
     }
 }

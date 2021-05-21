@@ -67,18 +67,14 @@ namespace ZeroPipeline
         }
 
         public async Task ListenAsync(
-            Action<string, object> input = null, Action<string, object[]> output = null)
+            Action<string, object> input = null, Action<string, object, bool> output = null)
         {
             while (true)
             {
                 var reader = await AcceptAsync();
                 await ProcessMessagesAsync(reader,
                     message => input?.Invoke(message.Id, ProcessMessage(message)),
-                    messages => 
-                    {
-                        foreach (var group in messages.GroupBy(message => message.Id))
-                            output?.Invoke(group.Key, group.Select(message => ProcessMessage(message)).ToArray());
-                    }
+                    (message, done) => output?.Invoke(message.Id, ProcessMessage(message), done)
                 );
             }
         }
@@ -105,9 +101,9 @@ namespace ZeroPipeline
             return PipeWriter.Create(callbackStream, callbackWriter);
         }
 
-        protected override bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
+        protected override bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request)
         {
-            message = default;
+            request = default;
             var span = buffer.ToArray().AsSpan();
 
             var bomPos = span.IndexOf(Message.BOM);
@@ -121,52 +117,51 @@ namespace ZeroPipeline
             var length = eomPos - start;
 
             var data = span.Slice(start, length).ToArray();
-            message = ZeroFormatterSerializer.Deserialize<Message>(data);
+            request = ZeroFormatterSerializer.Deserialize<Message>(data);
 
             buffer = buffer.Slice(end);
             return true;
         }
 
-        protected override async Task<Message[]> ProcessMessageAsync(Message message)
+        protected override async Task<Message[]> ProcessRequestAsync(Message request)
         {
-            var id = message.Id;
-            var type = Type.GetType(message.TypeName);
+            var id = request.Id;
+            var type = Type.GetType(request.TypeName);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
-                return await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
-                    Task.Factory.StartNew(() =>
+                return await Task.WhenAll(handlers.GetInvocationList().Select((Func<Delegate, Task<Message>>)(handler =>
+                    Task.Factory.StartNew((Func<Message>)(() =>
                     {
                         try
                         {
-                            var type = Type.GetType(message.TypeName);
-                            var request = _formatter.Deserialize(type, message.RawData);
-                            var response = handler.DynamicInvoke(request);
-                            var raw = _formatter.Serialize(type, response);
+                            var type = Type.GetType(request.TypeName);
+                            var input = _formatter.Deserialize(type, request.RawData);
+                            var output = handler.DynamicInvoke(input);
+                            var raw = _formatter.Serialize(type, output);
                             return Message.Create(id, type, raw);
                         }
                         catch (Exception ex)
                         {
-                            var response = ex.GetBaseException();
-                            var type = response.GetType();
-                            var info = $"{response.Message}{Environment.NewLine}{response.StackTrace}";
-                            var raw = Encoding.ASCII.GetBytes(info);
+                            var exception = ex.GetBaseException();
+                            var type = exception.GetType();
+                            var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
+                            var raw = Encoding.ASCII.GetBytes(output);
                             return Message.Create(id, type, raw);
                         }
-                    })
+                    })))
                 ));
             }
             return new Message[] { };
         }
 
-        protected override async IAsyncEnumerable<FlushResult> WriteMessagesAsync(Message input, params Message[] outputs)
+        protected override async IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses)
         {
-            var writer = GetWriter(input);
             if (writer == null) yield return default;
-            foreach (var output in outputs ?? new Message[] { })
+            foreach (var response in responses ?? new Message[] { })
             {
                 var data = new byte[] { };
                 BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
-                ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, output);
+                ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, response);
                 BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
                 yield return await writer.WriteAsync(data);
             }

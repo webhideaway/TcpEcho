@@ -9,6 +9,6 @@ namespace ZeroPipeline.Interfaces
         PipeWriter GetWriter(Message message);
 
         Task ProcessMessagesAsync(PipeReader reader,
-            Action<Message> input = null, Action<Message[]> outputs = null);
+            Action<Message> input = null, Action<Message, bool> output = null);
     }
 }
