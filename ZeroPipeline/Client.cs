@@ -35,22 +35,19 @@ namespace ZeroPipeline
             if (_callbackEndPoint == null) return;
  
             _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-            _listenerTask = Task.Factory.StartNew(() =>
+            _listenerTask = Task.Factory.StartNew(async () =>
                 {
-                    while (true)
-                    {
-                        _ = _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
+                    await _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
+                        {
+                            if (_callbackResponses.TryGetValue(id,
+                                out BlockingCollection<object> callbackResponses))
                             {
-                                if (_callbackResponses.TryGetValue(id,
-                                    out BlockingCollection<object> callbackResponses))
-                                {
-                                    callbackResponses.TryAdd(callbackResponse);
-                                    if (callbackResponses.Count == count)
-                                        callbackResponses.CompleteAdding();
-                                }
+                                callbackResponses.TryAdd(callbackResponse);
+                                if (callbackResponses.Count == count)
+                                    callbackResponses.CompleteAdding();
                             }
-                        );
-                    }
+                        }
+                    );
                 }
             );
         }
