@@ -129,8 +129,8 @@ namespace ZeroPipeline
             var type = Type.GetType(request.TypeName);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
-                return await Task.WhenAll(handlers.GetInvocationList().Select((Func<Delegate, Task<Message>>)(handler =>
-                    Task.Factory.StartNew((Func<Message>)(() =>
+                return await Task.WhenAll(handlers.GetInvocationList().Select(handler =>
+                    Task.Factory.StartNew(() =>
                     {
                         try
                         {
@@ -148,7 +148,7 @@ namespace ZeroPipeline
                             var raw = Encoding.ASCII.GetBytes(output);
                             return Message.Create(id, type, raw);
                         }
-                    })))
+                    })
                 ));
             }
             return new Message[] { };
@@ -156,8 +156,7 @@ namespace ZeroPipeline
 
         protected override async IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses)
         {
-            if (writer == null) yield return default;
-            foreach (var response in responses ?? new Message[] { })
+            foreach (var response in responses)
             {
                 var data = new byte[] { };
                 BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
