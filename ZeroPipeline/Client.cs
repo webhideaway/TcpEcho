@@ -75,7 +75,7 @@ namespace ZeroPipeline
             return data;
         }
 
-        private async Task PostAsync<TRequest>(TRequest request, Action<BlockingCollection<object>> handler)
+        private async Task PostAsync<TRequest>(TRequest request, Action<string, BlockingCollection<object>> handler)
         {
             var data = ProcessRequest(request, out string id);
             var callbackResponses = new BlockingCollection<object>();
@@ -85,16 +85,19 @@ namespace ZeroPipeline
                     callbackResponses.CompleteAdding();
             }
             await _remoteWriter.WriteAsync(data);
-            handler?.Invoke(callbackResponses);
+            handler?.Invoke(id, callbackResponses);
         }
 
         public async Task PostAsync<TRequest>(TRequest request, Action<Type, object> responseHandler = null)
         {
-            await PostAsync(request, callbackResponses =>
+            await PostAsync(request, (id, callbackResponses) =>
             {
-                var responses = callbackResponses.GetConsumingEnumerable();
-                foreach (var response in responses)
-                    responseHandler?.Invoke(response.GetType(), response);
+                using (callbackResponses)
+                {
+                    var responses = callbackResponses.GetConsumingEnumerable();
+                    foreach (var response in responses)
+                        responseHandler?.Invoke(response.GetType(), response);
+                }
             });
         }
 
