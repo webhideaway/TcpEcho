@@ -35,17 +35,20 @@ namespace ZeroPipeline
             if (_callbackEndPoint == null) return;
  
             _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-            await _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
-                {
-                    if (_callbackResponses.TryGetValue(id,
-                        out BlockingCollection<object> callbackResponses))
+            while (true)
+            {
+                await _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
                     {
-                        callbackResponses.TryAdd(callbackResponse);
-                        if (callbackResponses.Count == count)
-                            callbackResponses.CompleteAdding();
+                        if (_callbackResponses.TryGetValue(id,
+                            out BlockingCollection<object> callbackResponses))
+                        {
+                            callbackResponses.TryAdd(callbackResponse);
+                            if (callbackResponses.Count == count)
+                                callbackResponses.CompleteAdding();
+                        }
                     }
-                }
-            );
+                );
+            }
         }
 
         private void SetRemoteWriter(IPEndPoint remoteEndPoint)
