@@ -57,43 +57,23 @@ namespace ZeroPipeline
 
             return data;
         }
-
-        private async Task PostAsync<TRequest>(TRequest request, Action<string, BlockingCollection<object>> handler)
-        {
-            var data = ProcessRequest(request, out string id);
-            var callbackResponses = new BlockingCollection<object>();
-            if (_callbackResponses.TryAdd(id, callbackResponses))
-            {
-                if (_callbackEndPoint == null) 
-                    callbackResponses.CompleteAdding();
-            }
-            await _remoteWriter.WriteAsync(data);
-            handler?.Invoke(id, callbackResponses);
-        }
-
+         
         public async Task PostAsync<TRequest>(TRequest request, Action<Type, object> responseHandler = null)
         {
-            await Task.WhenAll(
-                PostAsync(request, (id, callbackResponses) =>
-                {
-                    using (callbackResponses)
+            var data = ProcessRequest(request, out string id);
+            if (_callbackEndPoint == null)
+                await _remoteWriter.WriteAsync(data);
+            else
+            {
+                await Task.WhenAll(
+                    _remoteWriter.WriteAsync(data).AsTask(),
+                    _callbackListener.ListenAsync(input: (callbackId, callbackResponse, count) =>
                     {
-                        var responses = callbackResponses.GetConsumingEnumerable();
-                        foreach (var response in responses)
-                            responseHandler?.Invoke(response.GetType(), response);
-                    }
-                }),
-                _callbackListener.ListenAsync(input: (id, callbackResponse, count) =>
-                {
-                    if (_callbackResponses.TryGetValue(id,
-                        out BlockingCollection<object> callbackResponses))
-                    {
-                        callbackResponses.TryAdd(callbackResponse);
-                        if (callbackResponses.Count == count)
-                            callbackResponses.CompleteAdding();
-                    }
-                })
-            );
+                        if (id == callbackId)
+                            responseHandler?.Invoke(callbackResponse.GetType(), callbackResponse);
+                    })
+                );
+            }
         }
 
         protected virtual void Dispose(bool disposing)
