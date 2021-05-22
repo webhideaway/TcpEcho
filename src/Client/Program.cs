@@ -25,9 +25,6 @@ namespace Client
 
             var range = random.Next(5, 15);
 
-            int person_count = 0;
-            int car_count = 0;
-
             while (true)
             {
                 Console.Read();
@@ -47,7 +44,7 @@ namespace Client
                             age: random.Next(1, 100)
                         );
 
-                        Console.WriteLine($"PERSON #{Interlocked.Increment(ref person_count)} [Name = {person.Name}, Age = {person.Age}]");
+                        Console.WriteLine($"PERSON [REQUEST] [Name = {person.Name}, Age = {person.Age}]");
 
                         await client.PostAsync<Person>(person, (type, response) =>
                         {
@@ -71,7 +68,7 @@ namespace Client
                             age: random.Next(1, 10)
                         );
 
-                        Console.WriteLine($"CAR #{Interlocked.Increment(ref car_count)} [Brand = {car.Brand}, Age = {car.Age}]");
+                        Console.WriteLine($"CAR [REQUEST] [Brand = {car.Brand}, Age = {car.Age}]");
 
                         await client.PostAsync<Car>(car, (type, response) =>
                         {

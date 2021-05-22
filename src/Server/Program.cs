@@ -15,14 +15,19 @@ namespace Server
 
             using var server = new ZeroPipeline.Server(localEndPoint);
 
-            server.RegisterHandler<Person, Person>(person =>
+            server.RegisterHandler<Person, Person>(request =>
             {
-                return new Person(person.Name.ToLowerInvariant(), person.Age * -1);
+                var response = new Person(request.Name.ToLowerInvariant(), request.Age * -1);
+                Console.WriteLine($"PERSON [RESPONSE] [Name = {response.Name}, Age = {response.Age}]");
+                return response;
+
             });
 
-            server.RegisterHandler<Car, Car>(car =>
+            server.RegisterHandler<Car, Car>(request =>
             {
-                return new Car(car.Brand.ToLowerInvariant(), car.Age * -1);
+                var response = new Car(request.Brand.ToLowerInvariant(), request.Age * -1);
+                Console.WriteLine($"CAR [RESPONSE] [Brand = {response.Brand}, Age = {response.Age}]");
+                return response;
             });
 
             await server.ListenAsync(input: request =>
