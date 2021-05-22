@@ -21,12 +21,11 @@ namespace ZeroPipeline.Interfaces
             CancellationToken cancellationToken = default);
 
         public async Task<SequencePosition> ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
-            Action<Message> input = null, Action<Message, bool> output = null,
-            CancellationToken cancellationToken = default)
+            Action<Message> input = null, Action<Message, bool> output = null)
         {
             while (TryReadRequest(ref buffer, out Message request))
             {
-                RegisterCancellationTokenSource(request.Id, request.Timeout, ref cancellationToken);
+                RegisterCancellationTokenSource(request.Id, request.Timeout, out CancellationToken cancellationToken);
 
                 input?.Invoke(request);
                 var responses = await ProcessRequestAsync(request, cancellationToken);
@@ -47,12 +46,9 @@ namespace ZeroPipeline.Interfaces
             return buffer.Start;
         }
 
-        private void RegisterCancellationTokenSource(string id, TimeSpan timeout, ref CancellationToken cancellationToken)
+        private void RegisterCancellationTokenSource(string id, TimeSpan timeout, out CancellationToken cancellationToken)
         {
             var cancellationTokenSource = new CancellationTokenSource(timeout);
-            if (!cancellationToken.Equals(default))
-                cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationTokenSource.Token, cancellationToken);
             CancellationTokenSources.TryAdd(id, cancellationTokenSource);
             cancellationToken = cancellationTokenSource.Token;
         }

@@ -123,8 +123,7 @@ namespace ZeroPipeline
         }
 
         public async Task CallbackAsync(
-            Action<Message> handler,
-            CancellationToken cancellationToken = default)
+            Action<Message> handler)
         {
             var reader = await AcceptAsync();
 
@@ -136,8 +135,7 @@ namespace ZeroPipeline
                 try
                 {
                     await ProcessMessagesAsync(buffer,
-                        message => handler?.Invoke(message),
-                        cancellationToken: cancellationToken
+                        message => handler?.Invoke(message)
                     );
                 }
                 finally
