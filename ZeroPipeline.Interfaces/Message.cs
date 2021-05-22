@@ -42,7 +42,7 @@ namespace ZeroPipeline.Interfaces
             return Create(Guid.NewGuid().ToString(), typeof(TRequest), rawData, callbackEndPoint);
         }
 
-        public static Message Create(string id, Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
+        public static Message Create(string id, Type type, byte[] rawData = null, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
                 id: id,

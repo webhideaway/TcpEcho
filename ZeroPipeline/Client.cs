@@ -48,7 +48,7 @@ namespace ZeroPipeline
             var message = Message.Create<TRequest>(raw, _callbackEndPoint);
             id = message.Id;
 
-            var data = new byte[512];
+            var data = new byte[] { };
 
             BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
             ZeroFormatterSerializer.Serialize(ref data, Message.BOM.Length, message);
@@ -65,11 +65,22 @@ namespace ZeroPipeline
                 : _formatter.Deserialize(type, message.RawData);
         }
 
-        public async Task<string> PostAsync<TRequest>(TRequest request, 
-            Action<Type, object> responseHandler = null, 
+        public async Task<string> PostAsync<TRequest>(TRequest request,
+            Action<Type, object> responseHandler = null,
             CancellationToken cancellationToken = default)
         {
             var data = ProcessRequest(request, out string id);
+
+            cancellationToken.Register(id =>
+            {
+                var cancellationMessage = Message.Create(id.ToString(), typeof(CancellationToken));
+                var cancellationData = new byte[] { };
+                BinaryUtil.WriteBytes(ref cancellationData, 0, Message.BOM);
+                ZeroFormatterSerializer.Serialize(ref cancellationData, Message.BOM.Length, cancellationMessage);
+                BinaryUtil.WriteBytes(ref cancellationData, cancellationData.Length, Message.EOM);
+                _remoteWriter.WriteAsync(cancellationData);
+            }, id);
+
             if (_callbackEndPoint == null)
                 await _remoteWriter.WriteAsync(data, cancellationToken);
             else
@@ -86,6 +97,7 @@ namespace ZeroPipeline
                     }, cancellationToken)
                 );
             }
+
             return id;
         }
 

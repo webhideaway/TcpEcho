@@ -18,8 +18,7 @@ namespace ZeroPipeline
         private readonly IFormatter _formatter;
         private bool _disposedValue;
 
-        private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers
-            = new ConcurrentDictionary<Type, Delegate>();
+        private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers = new();
 
         public Server(IPEndPoint listenEndPoint, IFormatter formatter = null) : base()
         {
@@ -58,26 +57,34 @@ namespace ZeroPipeline
 
         private object ProcessMessage(Message message)
         {
+            CancellationTokenSources.TryRemove(message.Id, out CancellationTokenSource cancellationTokenSource);
             var type = Type.GetType(message.TypeName);
-            return type.IsAssignableFrom(typeof(Exception))
-                ? Encoding.ASCII.GetString(message.RawData)
-                : _formatter.Deserialize(type, message.RawData);
+
+            if (type.IsAssignableFrom(typeof(Exception)))
+                return Encoding.ASCII.GetString(message.RawData);
+
+            if (type.IsAssignableFrom(typeof(CancellationToken)))
+            {
+                cancellationTokenSource.Cancel();
+                return null;
+            }
+
+            return _formatter.Deserialize(type, message.RawData);
         }
 
         public async Task ListenAsync(
-            Action<object> input = null, 
-            Action<object, bool> output = null,
-            CancellationToken cancellationToken = default)
+            Action<object> input = null,
+            Action<object, bool> output = null)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (true)
             {
                 var reader = await AcceptAsync();
 
                 try
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    while (true)
                     {
-                        ReadResult readResult = await reader.ReadAsync(cancellationToken);
+                        ReadResult readResult = await reader.ReadAsync();
                         ReadOnlySequence<byte> buffer = readResult.Buffer;
 
                         SequencePosition consumed = default;
@@ -88,8 +95,7 @@ namespace ZeroPipeline
 
                             consumed = await ProcessMessagesAsync(buffer,
                                 message => input?.Invoke(ProcessMessage(message)),
-                                (message, done) => output?.Invoke(ProcessMessage(message), done),
-                                cancellationToken
+                                (message, done) => output?.Invoke(ProcessMessage(message), done)
                             );
 
                             if (readResult.IsCompleted)

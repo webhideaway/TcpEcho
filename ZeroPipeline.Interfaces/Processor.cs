@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ZeroFormatter;
@@ -13,6 +15,8 @@ namespace ZeroPipeline.Interfaces
 {
     public abstract class Processor : IProcessor
     {
+        protected readonly ConcurrentDictionary<string, CancellationTokenSource> CancellationTokenSources = new();
+
         protected abstract Task<Message[]> ProcessRequestAsync(Message request,
             CancellationToken cancellationToken = default);
 
@@ -22,13 +26,19 @@ namespace ZeroPipeline.Interfaces
         {
             while (TryReadRequest(ref buffer, out Message request))
             {
-                input?.Invoke(request);
-                var writer = GetWriter(request);
+                if (cancellationToken == null)
+                {
+                    var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5)); //this should be configurable
+                    CancellationTokenSources.TryAdd(request.Id, cancellationTokenSource);
+                    cancellationToken = cancellationTokenSource.Token;
+                }
 
+                input?.Invoke(request);
+                var responses = await ProcessRequestAsync(request, cancellationToken);
+
+                var writer = GetWriter(request);
                 if (writer != null)
                 {
-                    var responses = await ProcessRequestAsync(request, cancellationToken);
-
                     var count = responses.Length;
                     for (var index = 0; index < count; index++)
                         output?.Invoke(responses[index], index == count - 1);
@@ -88,11 +98,11 @@ namespace ZeroPipeline.Interfaces
 
         private async IAsyncEnumerable<FlushResult> WriteResponsesAsync(
             PipeWriter writer, Message[] responses,
-            CancellationToken cancellationToken = default)
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             foreach (var response in responses)
             {
-                var data = new byte[512];
+                var data = new byte[] { };
 
                 BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
                 ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, response);

@@ -9,7 +9,7 @@ namespace ZeroPipeline.Interfaces
     {
         Task<SequencePosition> ProcessMessagesAsync(
             ReadOnlySequence<byte> buffer,
-            Action<Message> input = null, 
+            Action<Message> input = null,
             Action<Message, bool> output = null,
             CancellationToken cancellationToken = default);
     }
