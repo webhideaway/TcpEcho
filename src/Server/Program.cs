@@ -26,7 +26,6 @@ namespace Server
                 return new Car(car.Brand.ToLowerInvariant(), car.Age * -1);
             });
 
-            while(true)
             await server.ListenAsync(input: (id, request, count) =>
             {
                 if (request.GetType().IsAssignableFrom(typeof(Person)))

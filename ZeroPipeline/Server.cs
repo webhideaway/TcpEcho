@@ -69,37 +69,40 @@ namespace ZeroPipeline
         public async Task ListenAsync(
             Action<string, object, int> input = null, Action<string, object, bool> output = null)
         {
-            var reader = await AcceptAsync(); 
+            while (true)
+            {
+                var reader = await AcceptAsync();
 
-            try 
-            { 
-                while (true)
+                try
                 {
-                    ReadResult readResult = await reader.ReadAsync();
-                    ReadOnlySequence<byte> buffer = readResult.Buffer;
-
-                    try
+                    while (true)
                     {
-                        if (readResult.IsCanceled)
-                            break;
+                        ReadResult readResult = await reader.ReadAsync();
+                        ReadOnlySequence<byte> buffer = readResult.Buffer;
 
-                        await ProcessMessagesAsync(buffer,
-                            message => input?.Invoke(message.Id, ProcessMessage(message), message.Count),
-                            (message, done) => output?.Invoke(message.Id, ProcessMessage(message), done)
-                        );
+                        try
+                        {
+                            if (readResult.IsCanceled)
+                                break;
 
-                        if (readResult.IsCompleted)
-                            break;
-                    }
-                    finally
-                    {
-                        reader.AdvanceTo(buffer.Start, buffer.End);
+                            await ProcessMessagesAsync(buffer,
+                                message => input?.Invoke(message.Id, ProcessMessage(message), message.Count),
+                                (message, done) => output?.Invoke(message.Id, ProcessMessage(message), done)
+                            );
+
+                            if (readResult.IsCompleted)
+                                break;
+                        }
+                        finally
+                        {
+                            reader.AdvanceTo(buffer.Start, buffer.End);
+                        }
                     }
                 }
-            }
-            finally
-            {
-                await reader.CompleteAsync();
+                finally
+                {
+                    await reader.CompleteAsync();
+                }
             }
         }
 
