@@ -16,7 +16,7 @@ namespace ZeroPipeline.Interfaces
 
         public async Task ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
             Action<Message> input = null, Action<Message, bool> output = null)
-        { 
+        {
             while (TryReadRequest(ref buffer, out Message request))
             {
                 input?.Invoke(request);
@@ -25,7 +25,7 @@ namespace ZeroPipeline.Interfaces
                 if (writer != null)
                 {
                     var responses = await ProcessRequestAsync(request);
-                    
+
                     var count = responses.Length;
                     for (var index = 0; index < count; index++)
                         output?.Invoke(responses[index], index == count - 1);

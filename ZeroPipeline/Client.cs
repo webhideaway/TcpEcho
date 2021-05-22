@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.IO;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
@@ -22,12 +20,23 @@ namespace ZeroPipeline
 
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
+
+/* Unmerged change from project 'ZeroPipeline (net5.0)'
+Before:
             SetRemoteWriter(remoteEndPoint);
             
             _formatter = formatter ?? new DefaultFormatter();
+After:
+            SetRemoteWriter(remoteEndPoint);
+
+            _formatter = formatter ?? new DefaultFormatter();
+*/
+            SetRemoteWriter(remoteEndPoint);
+
+            _formatter = formatter ?? new DefaultFormatter();
             _callbackEndPoint = callbackEndPoint;
 
-            if (_callbackEndPoint != null) 
+            if (_callbackEndPoint != null)
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
         }
 
@@ -56,7 +65,7 @@ namespace ZeroPipeline
 
             return data;
         }
-         
+
         public async Task PostAsync<TRequest>(TRequest request, Action<Type, object> responseHandler = null)
         {
             var data = ProcessRequest(request, out string id);
