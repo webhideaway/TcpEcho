@@ -8,50 +8,24 @@ namespace ZeroPipeline.Interfaces
 {
     public abstract class Processor : IProcessor
     {
-        public async Task ProcessMessagesAsync(PipeReader reader,
+        public async Task ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
             Action<Message> input = null, Action<Message, bool> output = null)
-        {
-            try
+        { 
+            while (TryReadRequest(ref buffer, out Message request))
             {
-                while (true)
+                input?.Invoke(request);
+                var writer = GetWriter(request);
+                if (writer != null)
                 {
-                    ReadResult readResult = await reader.ReadAsync();
-                    ReadOnlySequence<byte> buffer = readResult.Buffer;
+                    var responses = await ProcessRequestAsync(request);
+                    var count = responses.Length;
+                    for (var index = 0; index < count; index++)
+                        output?.Invoke(responses[index], index == count - 1);
 
-                    try
-                    {
-                        if (readResult.IsCanceled)
-                            break;
-
-                        while (TryReadRequest(ref buffer, out Message request))
-                        {
-                            input?.Invoke(request);
-                            var writer = GetWriter(request);
-                            if (writer != null)
-                            {
-                                var responses = await ProcessRequestAsync(request);
-                                var count = responses.Length;
-                                for (var index = 0; index < count; index++)
-                                    output?.Invoke(responses[index], index == count - 1);
-
-                                await foreach (var writeResult in WriteResponsesAsync(writer, responses))
-                                    if (writeResult.IsCanceled || writeResult.IsCompleted)
-                                        continue;
-                            }
-                        }
-
-                        if (readResult.IsCompleted)
-                            break;
-                    }
-                    finally
-                    {
-                        reader.AdvanceTo(buffer.Start, buffer.End);
-                    }
+                    await foreach (var writeResult in WriteResponsesAsync(writer, responses))
+                        if (writeResult.IsCanceled || writeResult.IsCompleted)
+                            continue;
                 }
-            }
-            finally
-            {
-                await reader.CompleteAsync();
             }
         }
 
