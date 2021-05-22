@@ -95,18 +95,17 @@ namespace ZeroPipeline
                         }
                         finally
                         {
-                            reader.AdvanceTo(buffer.Start, buffer.End);
+                            if (_leaveOpen)
+                                reader.AdvanceTo(buffer.Start, buffer.End);
+                            else
+                                reader.AdvanceTo(buffer.End);
                         }
-
-                        if (!_leaveOpen) break;
                     }
                 }
                 finally
                 {
                     await reader.CompleteAsync();
                 }
-
-                if (!_leaveOpen) break;
             }
         }
 
