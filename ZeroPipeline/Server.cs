@@ -170,12 +170,12 @@ namespace ZeroPipeline
                     }, 
                     cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Current).
                     ContinueWith<Message>(_ => {
-                        var exception = _.Exception?.Flatten()?.GetBaseException() ?? new TaskCanceledException(_);
+                        var exception = _.Exception?.Flatten()?.GetBaseException() ?? new OperationCanceledException(id);
                         var type = exception.GetType();
                         var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
                         var raw = Encoding.ASCII.GetBytes(output);
                         return Message.Create(id: id, type: type, rawData: raw);
-                    }, CancellationToken.None, TaskContinuationOptions.NotOnRanToCompletion, TaskScheduler.Current)
+                    }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted & TaskContinuationOptions.OnlyOnCanceled, TaskScheduler.Current)
                 ));
             }
             return new Message[] { };
