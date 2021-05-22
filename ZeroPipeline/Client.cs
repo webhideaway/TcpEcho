@@ -65,7 +65,7 @@ namespace ZeroPipeline
                 : _formatter.Deserialize(type, message.RawData);
         }
 
-        public async Task PostAsync<TRequest>(TRequest request, 
+        public async Task<string> PostAsync<TRequest>(TRequest request, 
             Action<Type, object> responseHandler = null, 
             CancellationToken cancellationToken = default)
         {
@@ -86,6 +86,7 @@ namespace ZeroPipeline
                     }, cancellationToken)
                 );
             }
+            return id;
         }
 
         protected virtual void Dispose(bool disposing)
