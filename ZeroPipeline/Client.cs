@@ -19,7 +19,6 @@ namespace ZeroPipeline
         private bool _disposedValue;
         private IPEndPoint _callbackEndPoint;
         private IFormatter _formatter;
-        private static ConcurrentDictionary<string, BlockingCollection<object>> _callbackResponses = new();
 
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
