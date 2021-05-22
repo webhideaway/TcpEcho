@@ -7,8 +7,6 @@ namespace ZeroPipeline.Interfaces
 {
     public interface IProcessor
     {
-        PipeWriter GetWriter(Message message);
-
         Task ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
             Action<Message> input = null, Action<Message, bool> output = null);
     }

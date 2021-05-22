@@ -103,50 +103,6 @@ namespace ZeroPipeline
             }
         }
 
-        public override PipeWriter GetWriter(Message message)
-        {
-            IPEndPoint callbackEndPoint = null;
-
-            if (message.CallbackAddress != null && message.CallbackPort > 0)
-            {
-                var callbackAddress = new IPAddress(message.CallbackAddress);
-                callbackEndPoint = new IPEndPoint(callbackAddress, message.CallbackPort);
-            }
-
-            if (callbackEndPoint == null) return default;
-
-            var callbackSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            callbackSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-
-            callbackSocket.Connect(callbackEndPoint);
-            var callbackStream = new NetworkStream(callbackSocket);
-
-            var callbackWriter = new StreamPipeWriterOptions(leaveOpen: true);
-            return PipeWriter.Create(callbackStream, callbackWriter);
-        }
-
-        protected override bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request)
-        {
-            request = default;
-            var span = buffer.ToArray().AsSpan();
-
-            var bomPos = span.IndexOf(Message.BOM);
-            if (bomPos == -1) return false;
-
-            var eomPos = span.IndexOf(Message.EOM);
-            if (eomPos == -1) return false;
-
-            var start = bomPos + Message.BOM.Length;
-            var end = eomPos + Message.EOM.Length;
-            var length = eomPos - start;
-
-            var data = span.Slice(start, length).ToArray();
-            request = ZeroFormatterSerializer.Deserialize<Message>(data);
-
-            buffer = buffer.Slice(end);
-            return true;
-        }
-
         protected override async Task<Message[]> ProcessRequestAsync(Message request)
         {
             var id = request.Id;
@@ -178,20 +134,6 @@ namespace ZeroPipeline
                 ));
             }
             return new Message[] { };
-        }
-
-        protected override async IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses)
-        {
-            foreach (var response in responses)
-            {
-                var data = new byte[512];
-
-                BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
-                ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, response);
-                BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
-
-                yield return await writer.WriteAsync(data);
-            }
         }
 
         protected virtual void Dispose(bool disposing)

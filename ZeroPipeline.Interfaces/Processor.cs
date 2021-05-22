@@ -2,7 +2,11 @@
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO.Pipelines;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
+using ZeroFormatter;
+using ZeroFormatter.Internal;
 
 namespace ZeroPipeline.Interfaces
 {
@@ -15,9 +19,11 @@ namespace ZeroPipeline.Interfaces
             {
                 input?.Invoke(request);
                 var writer = GetWriter(request);
+
                 if (writer != null)
                 {
                     var responses = await ProcessRequestAsync(request);
+                    
                     var count = responses.Length;
                     for (var index = 0; index < count; index++)
                         output?.Invoke(responses[index], index == count - 1);
@@ -29,12 +35,62 @@ namespace ZeroPipeline.Interfaces
             }
         }
 
-        public abstract PipeWriter GetWriter(Message message);
+        protected PipeWriter GetWriter(Message message)
+        {
+            IPEndPoint callbackEndPoint = null;
 
-        protected abstract bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request);
+            if (message.CallbackAddress != null && message.CallbackPort > 0)
+            {
+                var callbackAddress = new IPAddress(message.CallbackAddress);
+                callbackEndPoint = new IPEndPoint(callbackAddress, message.CallbackPort);
+            }
 
+            if (callbackEndPoint == null) return default;
+
+            var callbackSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            callbackSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+
+            callbackSocket.Connect(callbackEndPoint);
+            var callbackStream = new NetworkStream(callbackSocket);
+
+            var callbackWriter = new StreamPipeWriterOptions(leaveOpen: true);
+            return PipeWriter.Create(callbackStream, callbackWriter);
+        }
+        protected bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request)
+        {
+            request = default;
+            var span = buffer.ToArray().AsSpan();
+
+            var bomPos = span.IndexOf(Message.BOM);
+            if (bomPos == -1) return false;
+
+            var eomPos = span.IndexOf(Message.EOM);
+            if (eomPos == -1) return false;
+
+            var start = bomPos + Message.BOM.Length;
+            var end = eomPos + Message.EOM.Length;
+            var length = eomPos - start;
+
+            var data = span.Slice(start, length).ToArray();
+            request = ZeroFormatterSerializer.Deserialize<Message>(data);
+
+            buffer = buffer.Slice(end);
+            return true;
+        }
         protected abstract Task<Message[]> ProcessRequestAsync(Message request);
 
-        protected abstract IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses);
+        protected async IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses)
+        {
+            foreach (var response in responses)
+            {
+                var data = new byte[512];
+
+                BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
+                ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, response);
+                BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
+
+                yield return await writer.WriteAsync(data);
+            }
+        }
     }
 }
