@@ -97,6 +97,8 @@ namespace ZeroPipeline
                         {
                             reader.AdvanceTo(buffer.Start, buffer.End);
                         }
+
+                        if (!_leaveOpen) break;
                     }
                 }
                 finally
