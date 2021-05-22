@@ -13,7 +13,7 @@ namespace Server
 
             Console.WriteLine("Server listening for requests on local end point: {0}", localEndPoint);
 
-            using var server = new ZeroPipeline.Server(localEndPoint);
+            using var server = new ZeroPipeline.Server(localEndPoint, leaveOpen: true);
 
             server.RegisterHandler<Person, Person>(person =>
             {

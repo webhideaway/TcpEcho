@@ -15,17 +15,20 @@ namespace ZeroPipeline
     {
         private readonly Socket _listenSocket;
         private readonly IFormatter _formatter;
+        private readonly bool _leaveOpen;
         private bool _disposedValue;
 
         private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers
             = new ConcurrentDictionary<Type, Delegate>();
 
-        public Server(IPEndPoint listenEndPoint, IFormatter formatter = null) : base()
+        public Server(IPEndPoint listenEndPoint, bool leaveOpen = false, IFormatter formatter = null) : base()
         {
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(listenEndPoint);
 
             _listenSocket.Listen(120);
+            _leaveOpen = leaveOpen;
+
             _formatter = formatter ?? new DefaultFormatter();
         }
 
@@ -51,7 +54,7 @@ namespace ZeroPipeline
         {
             var socket = await _listenSocket.AcceptAsync();
             var stream = new NetworkStream(socket);
-            var reader = new StreamPipeReaderOptions(leaveOpen: true);
+            var reader = new StreamPipeReaderOptions(leaveOpen: _leaveOpen);
             return PipeReader.Create(stream, reader);
         }
 
