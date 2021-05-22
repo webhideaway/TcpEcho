@@ -69,14 +69,11 @@ namespace ZeroPipeline
         public async Task ListenAsync(
             Action<string, object, int> input = null, Action<string, object, bool> output = null)
         {
-            while (true)
-            {
-                var reader = await AcceptAsync();
-                await ProcessMessagesAsync(reader,
-                    message => input?.Invoke(message.Id, ProcessMessage(message), message.Count),
-                    (message, done) => output?.Invoke(message.Id, ProcessMessage(message), done)
-                );
-            }
+            var reader = await AcceptAsync();
+            await ProcessMessagesAsync(reader,
+                message => input?.Invoke(message.Id, ProcessMessage(message), message.Count),
+                (message, done) => output?.Invoke(message.Id, ProcessMessage(message), done)
+            );
         }
 
         public override PipeWriter GetWriter(Message message)
