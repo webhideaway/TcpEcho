@@ -130,7 +130,7 @@ namespace ZeroPipeline
 
             try
             {
-                ReadResult readResult = await reader.ReadAsync(cancellationToken);
+                ReadResult readResult = await reader.ReadAsync();
                 ReadOnlySequence<byte> buffer = readResult.Buffer;
 
                 try
