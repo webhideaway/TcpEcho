@@ -14,7 +14,7 @@ namespace ZeroPipeline.Interfaces
     {
         protected abstract Task<Message[]> ProcessRequestAsync(Message request);
 
-        public async Task ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
+        public async Task<SequencePosition> ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
             Action<Message> input = null, Action<Message, bool> output = null)
         {
             while (TryReadRequest(ref buffer, out Message request))
@@ -35,6 +35,8 @@ namespace ZeroPipeline.Interfaces
                             continue;
                 }
             }
+
+            return buffer.Start;
         }
 
         private PipeWriter GetWriter(Message message)
@@ -58,6 +60,7 @@ namespace ZeroPipeline.Interfaces
             var callbackWriter = new StreamPipeWriterOptions(leaveOpen: true);
             return PipeWriter.Create(callbackStream, callbackWriter);
         }
+
         private bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request)
         {
             request = default;

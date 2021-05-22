@@ -78,12 +78,13 @@ namespace ZeroPipeline
                         ReadResult readResult = await reader.ReadAsync();
                         ReadOnlySequence<byte> buffer = readResult.Buffer;
 
+                        SequencePosition consumed = default;
                         try
                         {
                             if (readResult.IsCanceled)
                                 break;
 
-                            await ProcessMessagesAsync(buffer,
+                            consumed = await ProcessMessagesAsync(buffer,
                                 message => input?.Invoke(message.Id, ProcessMessage(message), message.Count),
                                 (message, done) => output?.Invoke(message.Id, ProcessMessage(message), done)
                             );
@@ -93,7 +94,7 @@ namespace ZeroPipeline
                         }
                         finally
                         {
-                            reader.AdvanceTo(buffer.Start, buffer.End);
+                            reader.AdvanceTo(consumed, buffer.End);
                         }
                     }
                 }

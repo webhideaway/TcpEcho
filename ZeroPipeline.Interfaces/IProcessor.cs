@@ -6,7 +6,7 @@ namespace ZeroPipeline.Interfaces
 {
     public interface IProcessor
     {
-        Task ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
+        Task<SequencePosition> ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
             Action<Message> input = null, Action<Message, bool> output = null);
     }
 }
