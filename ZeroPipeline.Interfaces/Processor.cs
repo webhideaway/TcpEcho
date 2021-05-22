@@ -38,7 +38,7 @@ namespace ZeroPipeline.Interfaces
                     for (var index = 0; index < count; index++)
                         output?.Invoke(responses[index], index == count - 1);
 
-                    await foreach (var writeResult in WriteResponsesAsync(writer, responses, cancellationToken))
+                    await foreach (var writeResult in WriteResponsesAsync(writer, responses))
                         if (writeResult.IsCanceled || writeResult.IsCompleted)
                             continue;
                 }
@@ -102,8 +102,7 @@ namespace ZeroPipeline.Interfaces
         }
 
         private async IAsyncEnumerable<FlushResult> WriteResponsesAsync(
-            PipeWriter writer, Message[] responses,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+            PipeWriter writer, Message[] responses)
         {
             foreach (var response in responses)
             {
@@ -113,7 +112,7 @@ namespace ZeroPipeline.Interfaces
                 ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, response);
                 BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
 
-                yield return await writer.WriteAsync(data, cancellationToken);
+                yield return await writer.WriteAsync(data);
             }
         }
     }
