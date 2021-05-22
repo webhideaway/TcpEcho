@@ -55,7 +55,6 @@ namespace ZeroPipeline.Interfaces
                     cancellationTokenSource.Token, cancellationToken);
             CancellationTokenSources.TryAdd(id, cancellationTokenSource);
             cancellationToken = cancellationTokenSource.Token;
-            cancellationToken.ThrowIfCancellationRequested();
         }
 
         private PipeWriter GetWriter(Message message)

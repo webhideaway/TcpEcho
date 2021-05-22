@@ -170,7 +170,8 @@ namespace ZeroPipeline
                     }, 
                     cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Current).
                     ContinueWith<Message>(_ => {
-                        var exception = _.Exception?.Flatten()?.GetBaseException() ?? new OperationCanceledException(id);
+                        var exception = _.Exception?.Flatten()?.GetBaseException() 
+                            ?? new Exception(id, new TaskCanceledException(_));
                         var type = exception.GetType();
                         var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
                         var raw = Encoding.ASCII.GetBytes(output);
