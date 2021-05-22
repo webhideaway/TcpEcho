@@ -64,7 +64,7 @@ namespace ZeroPipeline
             {
                 await Task.WhenAll(
                     _remoteWriter.WriteAsync(data).AsTask(),
-                    _callbackListener.ListenAsync(input: (callbackId, callbackResponse, count) =>
+                    _callbackListener.CallbackAsync((callbackId, callbackResponse, count) =>
                     {
                         if (id == callbackId)
                             responseHandler?.Invoke(callbackResponse.GetType(), callbackResponse);

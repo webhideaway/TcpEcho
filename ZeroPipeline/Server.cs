@@ -64,7 +64,8 @@ namespace ZeroPipeline
         }
 
         public async Task ListenAsync(
-            Action<string, object, int> input = null, Action<string, object, bool> output = null)
+            Action<string, object, int> input = null, 
+            Action<string, object, bool> output = null)
         {
             while (true)
             {
@@ -100,6 +101,33 @@ namespace ZeroPipeline
                 {
                     await reader.CompleteAsync();
                 }
+            }
+        }
+
+        public async Task CallbackAsync(
+            Action<string, object, int> handler)
+        {
+            var reader = await AcceptAsync();
+
+            try
+            {
+                ReadResult readResult = await reader.ReadAsync();
+                ReadOnlySequence<byte> buffer = readResult.Buffer;
+
+                try
+                {
+                    await ProcessMessagesAsync(buffer,
+                        message => handler?.Invoke(message.Id, ProcessMessage(message), message.Count)
+                    );
+                }
+                finally
+                {
+                    reader.CancelPendingRead();
+                }
+            }
+            finally
+            {
+                await reader.CompleteAsync();
             }
         }
 
