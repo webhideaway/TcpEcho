@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using ZeroFormatter;
 using ZeroFormatter.Internal;
@@ -12,10 +13,12 @@ namespace ZeroPipeline.Interfaces
 {
     public abstract class Processor : IProcessor
     {
-        protected abstract Task<Message[]> ProcessRequestAsync(Message request);
+        protected abstract Task<Message[]> ProcessRequestAsync(Message request,
+            CancellationToken cancellationToken = default);
 
         public async Task<SequencePosition> ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
-            Action<Message> input = null, Action<Message, bool> output = null)
+            Action<Message> input = null, Action<Message, bool> output = null,
+            CancellationToken cancellationToken = default)
         {
             while (TryReadRequest(ref buffer, out Message request))
             {
@@ -24,13 +27,13 @@ namespace ZeroPipeline.Interfaces
 
                 if (writer != null)
                 {
-                    var responses = await ProcessRequestAsync(request);
+                    var responses = await ProcessRequestAsync(request, cancellationToken);
 
                     var count = responses.Length;
                     for (var index = 0; index < count; index++)
                         output?.Invoke(responses[index], index == count - 1);
 
-                    await foreach (var writeResult in WriteResponsesAsync(writer, responses))
+                    await foreach (var writeResult in WriteResponsesAsync(writer, responses, cancellationToken))
                         if (writeResult.IsCanceled || writeResult.IsCompleted)
                             continue;
                 }
@@ -83,7 +86,9 @@ namespace ZeroPipeline.Interfaces
             return true;
         }
 
-        private async IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses)
+        private async IAsyncEnumerable<FlushResult> WriteResponsesAsync(
+            PipeWriter writer, Message[] responses,
+            CancellationToken cancellationToken = default)
         {
             foreach (var response in responses)
             {
@@ -93,7 +98,7 @@ namespace ZeroPipeline.Interfaces
                 ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, response);
                 BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
 
-                yield return await writer.WriteAsync(data);
+                yield return await writer.WriteAsync(data, cancellationToken);
             }
         }
     }

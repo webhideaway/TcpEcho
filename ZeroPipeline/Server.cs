@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ZeroPipeline.Interfaces;
 
@@ -25,7 +26,7 @@ namespace ZeroPipeline
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(listenEndPoint);
 
-            _listenSocket.Listen(120);
+            _listenSocket.Listen(100); //this should be configurable
             _formatter = formatter ?? new DefaultFormatter();
         }
 
@@ -65,7 +66,8 @@ namespace ZeroPipeline
 
         public async Task ListenAsync(
             Action<object> input = null, 
-            Action<object, bool> output = null)
+            Action<object, bool> output = null,
+            CancellationToken cancellationToken = default)
         {
             while (true)
             {
@@ -75,7 +77,7 @@ namespace ZeroPipeline
                 {
                     while (true)
                     {
-                        ReadResult readResult = await reader.ReadAsync();
+                        ReadResult readResult = await reader.ReadAsync(cancellationToken);
                         ReadOnlySequence<byte> buffer = readResult.Buffer;
 
                         SequencePosition consumed = default;
@@ -86,7 +88,8 @@ namespace ZeroPipeline
 
                             consumed = await ProcessMessagesAsync(buffer,
                                 message => input?.Invoke(ProcessMessage(message)),
-                                (message, done) => output?.Invoke(ProcessMessage(message), done)
+                                (message, done) => output?.Invoke(ProcessMessage(message), done),
+                                cancellationToken
                             );
 
                             if (readResult.IsCompleted)
@@ -106,19 +109,21 @@ namespace ZeroPipeline
         }
 
         public async Task CallbackAsync(
-            Action<Message> handler)
+            Action<Message> handler,
+            CancellationToken cancellationToken = default)
         {
             var reader = await AcceptAsync();
 
             try
             {
-                ReadResult readResult = await reader.ReadAsync();
+                ReadResult readResult = await reader.ReadAsync(cancellationToken);
                 ReadOnlySequence<byte> buffer = readResult.Buffer;
 
                 try
                 {
                     await ProcessMessagesAsync(buffer,
-                        message => handler?.Invoke(message)
+                        message => handler?.Invoke(message),
+                        cancellationToken: cancellationToken
                     );
                 }
                 finally
@@ -132,7 +137,8 @@ namespace ZeroPipeline
             }
         }
 
-        protected override async Task<Message[]> ProcessRequestAsync(Message request)
+        protected override async Task<Message[]> ProcessRequestAsync(Message request,
+            CancellationToken cancellationToken = default)
         {
             var id = request.Id;
             var type = Type.GetType(request.TypeName);
@@ -140,7 +146,7 @@ namespace ZeroPipeline
             {
                 var invocationList = handlers.GetInvocationList();
                 return await Task.WhenAll(invocationList.Select(handler =>
-                    Task.Factory.StartNew(() =>
+                    Task<Message>.Factory.StartNew(() =>
                     {
                         try
                         {
@@ -158,7 +164,7 @@ namespace ZeroPipeline
                             var raw = Encoding.ASCII.GetBytes(output);
                             return Message.Create(id, type, raw);
                         }
-                    })
+                    }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Current)
                 ));
             }
             return new Message[] { };

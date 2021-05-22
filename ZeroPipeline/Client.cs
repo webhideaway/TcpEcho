@@ -3,6 +3,7 @@ using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ZeroFormatter;
 using ZeroFormatter.Internal;
@@ -64,15 +65,17 @@ namespace ZeroPipeline
                 : _formatter.Deserialize(type, message.RawData);
         }
 
-        public async Task PostAsync<TRequest>(TRequest request, Action<Type, object> responseHandler = null)
+        public async Task PostAsync<TRequest>(TRequest request, 
+            Action<Type, object> responseHandler = null, 
+            CancellationToken cancellationToken = default)
         {
             var data = ProcessRequest(request, out string id);
             if (_callbackEndPoint == null)
-                await _remoteWriter.WriteAsync(data);
+                await _remoteWriter.WriteAsync(data, cancellationToken);
             else
             {
                 await Task.WhenAll(
-                    _remoteWriter.WriteAsync(data).AsTask(),
+                    _remoteWriter.WriteAsync(data, cancellationToken).AsTask(),
                     _callbackListener.CallbackAsync(callback =>
                     {
                         if (id == callback.Id)
@@ -80,7 +83,7 @@ namespace ZeroPipeline
                             var response = ProcessMessage(callback);
                             responseHandler?.Invoke(response.GetType(), response);
                         }
-                    })
+                    }, cancellationToken)
                 );
             }
         }
