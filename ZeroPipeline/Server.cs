@@ -105,6 +105,8 @@ namespace ZeroPipeline
                 {
                     await reader.CompleteAsync();
                 }
+
+                if (!_leaveOpen) break;
             }
         }
 
