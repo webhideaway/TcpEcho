@@ -98,7 +98,7 @@ namespace ZeroPipeline
                             if (_leaveOpen)
                                 reader.AdvanceTo(buffer.Start, buffer.End);
                             else
-                                reader.AdvanceTo(buffer.End);
+                                reader.CancelPendingRead();
                         }
 
                         if (!_leaveOpen) break;
