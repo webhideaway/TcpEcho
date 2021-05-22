@@ -54,7 +54,7 @@ namespace ZeroPipeline
         {
             var socket = await _listenSocket.AcceptAsync();
             var stream = new NetworkStream(socket);
-            var reader = new StreamPipeReaderOptions(leaveOpen: true);
+            var reader = new StreamPipeReaderOptions(leaveOpen: _leaveOpen);
             return PipeReader.Create(stream, reader);
         }
 
@@ -100,12 +100,16 @@ namespace ZeroPipeline
                             else
                                 reader.AdvanceTo(buffer.End);
                         }
+
+                        if (!_leaveOpen) break;
                     }
                 }
                 finally
                 {
                     await reader.CompleteAsync();
                 }
+
+                if (!_leaveOpen) break;
             }
         }
 
