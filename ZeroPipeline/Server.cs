@@ -64,8 +64,8 @@ namespace ZeroPipeline
         }
 
         public async Task ListenAsync(
-            Action<string, object, int> input = null, 
-            Action<string, object, bool> output = null)
+            Action<object> input = null, 
+            Action<object, bool> output = null)
         {
             while (true)
             {
@@ -85,8 +85,8 @@ namespace ZeroPipeline
                                 break;
 
                             consumed = await ProcessMessagesAsync(buffer,
-                                message => input?.Invoke(message.Id, ProcessMessage(message), message.Count),
-                                (message, done) => output?.Invoke(message.Id, ProcessMessage(message), done)
+                                message => input?.Invoke(ProcessMessage(message)),
+                                (message, done) => output?.Invoke(ProcessMessage(message), done)
                             );
 
                             if (readResult.IsCompleted)
@@ -106,7 +106,7 @@ namespace ZeroPipeline
         }
 
         public async Task CallbackAsync(
-            Action<string, object, int> handler)
+            Action<Message> handler)
         {
             var reader = await AcceptAsync();
 
@@ -118,7 +118,7 @@ namespace ZeroPipeline
                 try
                 {
                     await ProcessMessagesAsync(buffer,
-                        message => handler?.Invoke(message.Id, ProcessMessage(message), message.Count)
+                        message => handler?.Invoke(message)
                     );
                 }
                 finally
@@ -139,7 +139,6 @@ namespace ZeroPipeline
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
                 var invocationList = handlers.GetInvocationList();
-                var count = invocationList.Length;
                 return await Task.WhenAll(invocationList.Select(handler =>
                     Task.Factory.StartNew(() =>
                     {
@@ -149,7 +148,7 @@ namespace ZeroPipeline
                             var input = _formatter.Deserialize(type, request.RawData);
                             var output = handler.DynamicInvoke(input);
                             var raw = _formatter.Serialize(type, output);
-                            return Message.Create(id, count, type, raw);
+                            return Message.Create(id, type, raw);
                         }
                         catch (Exception ex)
                         {
@@ -157,7 +156,7 @@ namespace ZeroPipeline
                             var type = exception.GetType();
                             var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
                             var raw = Encoding.ASCII.GetBytes(output);
-                            return Message.Create(id, count, type, raw);
+                            return Message.Create(id, type, raw);
                         }
                     })
                 ));

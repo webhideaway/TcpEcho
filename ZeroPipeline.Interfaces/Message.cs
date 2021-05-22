@@ -10,14 +10,12 @@ namespace ZeroPipeline.Interfaces
     {
         public Message(
             string id = null,
-            int count = 1,
             string typeName = null,
             byte[] callbackAddress = null,
             int callbackPort = 0,
             byte[] rawData = null)
         {
             Id = id;
-            Count = count;
             TypeName = typeName;
             CallbackAddress = callbackAddress;
             CallbackPort = callbackPort;
@@ -28,30 +26,26 @@ namespace ZeroPipeline.Interfaces
         public readonly string Id;
 
         [Index(1)]
-        public readonly int Count;
-
-        [Index(2)]
         public readonly string TypeName;
 
-        [Index(3)]
+        [Index(2)]
         public readonly byte[] CallbackAddress;
 
-        [Index(4)]
+        [Index(3)]
         public readonly int CallbackPort;
 
-        [Index(5)]
+        [Index(4)]
         public readonly byte[] RawData;
 
         public static Message Create<TRequest>(byte[] rawData, IPEndPoint callbackEndPoint)
         {
-            return Create(Guid.NewGuid().ToString(), 1, typeof(TRequest), rawData, callbackEndPoint);
+            return Create(Guid.NewGuid().ToString(), typeof(TRequest), rawData, callbackEndPoint);
         }
 
-        public static Message Create(string id, int count, Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
+        public static Message Create(string id, Type type, byte[] rawData, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
                 id: id,
-                count: count,
                 typeName: $"{type.FullName}, {type.Assembly.FullName}",
                 callbackAddress: callbackEndPoint?.Address.GetAddressBytes(),
                 callbackPort: callbackEndPoint?.Port ?? 0,

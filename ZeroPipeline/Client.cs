@@ -2,6 +2,7 @@
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using ZeroFormatter;
 using ZeroFormatter.Internal;
@@ -55,6 +56,14 @@ namespace ZeroPipeline
             return data;
         }
 
+        private object ProcessMessage(Message message)
+        {
+            var type = Type.GetType(message.TypeName);
+            return type.IsAssignableFrom(typeof(Exception))
+                ? Encoding.ASCII.GetString(message.RawData)
+                : _formatter.Deserialize(type, message.RawData);
+        }
+
         public async Task PostAsync<TRequest>(TRequest request, Action<Type, object> responseHandler = null)
         {
             var data = ProcessRequest(request, out string id);
@@ -64,10 +73,13 @@ namespace ZeroPipeline
             {
                 await Task.WhenAll(
                     _remoteWriter.WriteAsync(data).AsTask(),
-                    _callbackListener.CallbackAsync((callbackId, callbackResponse, count) =>
+                    _callbackListener.CallbackAsync(callback =>
                     {
-                        if (id == callbackId)
-                            responseHandler?.Invoke(callbackResponse.GetType(), callbackResponse);
+                        if (id == callback.Id)
+                        {
+                            var response = ProcessMessage(callback);
+                            responseHandler?.Invoke(response.GetType(), response);
+                        }
                     })
                 );
             }
