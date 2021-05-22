@@ -26,7 +26,7 @@ namespace ZeroPipeline
             _callbackEndPoint = callbackEndPoint;
 
             if (_callbackEndPoint != null)
-                _callbackListener = new Server(_callbackEndPoint, leaveOpen: false, formatter: _formatter);
+                _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
         }
 
         private void SetRemoteWriter(IPEndPoint remoteEndPoint)
