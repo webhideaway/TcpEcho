@@ -69,13 +69,13 @@ namespace ZeroPipeline
             Action<object, bool> output = null,
             CancellationToken cancellationToken = default)
         {
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 var reader = await AcceptAsync();
 
                 try
                 {
-                    while (true)
+                    while (!cancellationToken.IsCancellationRequested)
                     {
                         ReadResult readResult = await reader.ReadAsync(cancellationToken);
                         ReadOnlySequence<byte> buffer = readResult.Buffer;
