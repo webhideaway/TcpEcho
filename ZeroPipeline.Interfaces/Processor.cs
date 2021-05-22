@@ -12,6 +12,8 @@ namespace ZeroPipeline.Interfaces
 {
     public abstract class Processor : IProcessor
     {
+        protected abstract Task<Message[]> ProcessRequestAsync(Message request);
+
         public async Task ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
             Action<Message> input = null, Action<Message, bool> output = null)
         { 
@@ -35,7 +37,7 @@ namespace ZeroPipeline.Interfaces
             }
         }
 
-        protected PipeWriter GetWriter(Message message)
+        private PipeWriter GetWriter(Message message)
         {
             IPEndPoint callbackEndPoint = null;
 
@@ -56,7 +58,7 @@ namespace ZeroPipeline.Interfaces
             var callbackWriter = new StreamPipeWriterOptions(leaveOpen: true);
             return PipeWriter.Create(callbackStream, callbackWriter);
         }
-        protected bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request)
+        private bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request)
         {
             request = default;
             var span = buffer.ToArray().AsSpan();
@@ -77,9 +79,8 @@ namespace ZeroPipeline.Interfaces
             buffer = buffer.Slice(end);
             return true;
         }
-        protected abstract Task<Message[]> ProcessRequestAsync(Message request);
 
-        protected async IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses)
+        private async IAsyncEnumerable<FlushResult> WriteResponsesAsync(PipeWriter writer, params Message[] responses)
         {
             foreach (var response in responses)
             {
