@@ -26,12 +26,7 @@ namespace ZeroPipeline.Interfaces
         {
             while (TryReadRequest(ref buffer, out Message request))
             {
-                if (cancellationToken == null)
-                {
-                    var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5)); //this should be configurable
-                    CancellationTokenSources.TryAdd(request.Id, cancellationTokenSource);
-                    cancellationToken = cancellationTokenSource.Token;
-                }
+                RegisterCancellationTokenSource(request.Id, ref cancellationToken);
 
                 input?.Invoke(request);
                 var responses = await ProcessRequestAsync(request, cancellationToken);
@@ -50,6 +45,16 @@ namespace ZeroPipeline.Interfaces
             }
 
             return buffer.Start;
+        }
+
+        private void RegisterCancellationTokenSource(string id, ref CancellationToken cancellationToken)
+        {
+            if (cancellationToken == null)
+            {
+                var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5)); //this should be configurable
+                CancellationTokenSources.TryAdd(id, cancellationTokenSource);
+                cancellationToken = cancellationTokenSource.Token;
+            }
         }
 
         private PipeWriter GetWriter(Message message)
