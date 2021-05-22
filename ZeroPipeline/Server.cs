@@ -160,10 +160,12 @@ namespace ZeroPipeline
         {
             foreach (var response in responses)
             {
-                var data = new byte[] { };
+                var data = new byte[512];
+
                 BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
                 ZeroFormatterSerializer.Serialize<Message>(ref data, Message.BOM.Length, response);
                 BinaryUtil.WriteBytes(ref data, data.Length, Message.EOM);
+
                 yield return await writer.WriteAsync(data);
             }
         }

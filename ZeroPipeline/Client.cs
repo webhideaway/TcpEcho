@@ -49,7 +49,7 @@ namespace ZeroPipeline
             var message = Message.Create<TRequest>(raw, _callbackEndPoint);
             id = message.Id;
 
-            var data = new byte[] { };
+            var data = new byte[512];
 
             BinaryUtil.WriteBytes(ref data, 0, Message.BOM);
             ZeroFormatterSerializer.Serialize(ref data, Message.BOM.Length, message);
