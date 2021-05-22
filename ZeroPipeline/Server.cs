@@ -21,7 +21,7 @@ namespace ZeroPipeline
         private readonly ConcurrentDictionary<Type, Delegate> _registeredHandlers
             = new ConcurrentDictionary<Type, Delegate>();
 
-        public Server(IPEndPoint listenEndPoint, bool leaveOpen = false, IFormatter formatter = null) : base()
+        public Server(IPEndPoint listenEndPoint, bool leaveOpen = true, IFormatter formatter = null) : base()
         {
             _listenSocket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             _listenSocket.Bind(listenEndPoint);
@@ -54,7 +54,7 @@ namespace ZeroPipeline
         {
             var socket = await _listenSocket.AcceptAsync();
             var stream = new NetworkStream(socket);
-            var reader = new StreamPipeReaderOptions(leaveOpen: _leaveOpen);
+            var reader = new StreamPipeReaderOptions(leaveOpen: true);
             return PipeReader.Create(stream, reader);
         }
 

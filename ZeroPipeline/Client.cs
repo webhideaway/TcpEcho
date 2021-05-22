@@ -20,24 +20,13 @@ namespace ZeroPipeline
 
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
-
-/* Unmerged change from project 'ZeroPipeline (net5.0)'
-Before:
-            SetRemoteWriter(remoteEndPoint);
-            
-            _formatter = formatter ?? new DefaultFormatter();
-After:
-            SetRemoteWriter(remoteEndPoint);
-
-            _formatter = formatter ?? new DefaultFormatter();
-*/
             SetRemoteWriter(remoteEndPoint);
 
             _formatter = formatter ?? new DefaultFormatter();
             _callbackEndPoint = callbackEndPoint;
 
             if (_callbackEndPoint != null)
-                _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
+                _callbackListener = new Server(_callbackEndPoint, leaveOpen: false, formatter: _formatter);
         }
 
         private void SetRemoteWriter(IPEndPoint remoteEndPoint)
