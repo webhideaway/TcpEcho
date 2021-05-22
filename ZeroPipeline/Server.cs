@@ -168,7 +168,7 @@ namespace ZeroPipeline
                             var input = _formatter.Deserialize(type, request.RawData);
                             var output = handler.DynamicInvoke(input);
                             var raw = _formatter.Serialize(type, output);
-                            return Message.Create(id, type, raw);
+                            return Message.Create(id : id, type : type, rawData: raw);
                         }
                         catch (Exception ex)
                         {
@@ -176,7 +176,7 @@ namespace ZeroPipeline
                             var type = exception.GetType();
                             var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
                             var raw = Encoding.ASCII.GetBytes(output);
-                            return Message.Create(id, type, raw);
+                            return Message.Create(id: id, type: type, rawData: raw);
                         }
                     }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Current)
                 ));

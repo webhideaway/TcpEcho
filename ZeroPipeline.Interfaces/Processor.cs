@@ -26,7 +26,7 @@ namespace ZeroPipeline.Interfaces
         {
             while (TryReadRequest(ref buffer, out Message request))
             {
-                RegisterCancellationTokenSource(request.Id, ref cancellationToken);
+                RegisterCancellationTokenSource(request.Id, request.Timeout, ref cancellationToken);
 
                 input?.Invoke(request);
                 var responses = await ProcessRequestAsync(request, cancellationToken);
@@ -47,14 +47,15 @@ namespace ZeroPipeline.Interfaces
             return buffer.Start;
         }
 
-        private void RegisterCancellationTokenSource(string id, ref CancellationToken cancellationToken)
+        private void RegisterCancellationTokenSource(string id, TimeSpan timeout, ref CancellationToken cancellationToken)
         {
-            if (cancellationToken == null)
-            {
-                var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(5)); //this should be configurable
-                CancellationTokenSources.TryAdd(id, cancellationTokenSource);
-                cancellationToken = cancellationTokenSource.Token;
-            }
+            var cancellationTokenSource = new CancellationTokenSource(timeout);
+            if (!cancellationToken.Equals(default))
+                cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationTokenSource.Token, cancellationToken);
+            CancellationTokenSources.TryAdd(id, cancellationTokenSource);
+            cancellationToken = cancellationTokenSource.Token;
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
         private PipeWriter GetWriter(Message message)

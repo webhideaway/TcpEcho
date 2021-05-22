@@ -42,10 +42,10 @@ namespace ZeroPipeline
             _remoteWriter = PipeWriter.Create(remoteStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
-        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request, out string id)
+        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request, TimeSpan timeout, out string id)
         {
             var raw = _formatter.Serialize(request);
-            var message = Message.Create<TRequest>(raw, _callbackEndPoint);
+            var message = Message.Create<TRequest>(raw, timeout, _callbackEndPoint);
             id = message.Id;
 
             var data = new byte[] { };
@@ -65,13 +65,9 @@ namespace ZeroPipeline
                 : _formatter.Deserialize(type, message.RawData);
         }
 
-        public async Task<string> PostAsync<TRequest>(TRequest request,
-            Action<Type, object> responseHandler = null,
-            CancellationToken cancellationToken = default)
+        private CancellationTokenRegistration RegisterCancellationToken(string id, ref CancellationToken cancellationToken)
         {
-            var data = ProcessRequest(request, out string id);
-
-            cancellationToken.Register(id =>
+            return cancellationToken.Register(id =>
             {
                 var cancellationMessage = Message.Create(id.ToString(), typeof(CancellationToken));
                 var cancellationData = new byte[] { };
@@ -80,6 +76,15 @@ namespace ZeroPipeline
                 BinaryUtil.WriteBytes(ref cancellationData, cancellationData.Length, Message.EOM);
                 _remoteWriter.WriteAsync(cancellationData);
             }, id);
+        }
+
+        public async Task<string> PostAsync<TRequest>(TRequest request,
+            Action<Type, object> responseHandler = null,
+            TimeSpan timeout = default,
+            CancellationToken cancellationToken = default)
+        {
+            var data = ProcessRequest(request, timeout, out string id);
+            var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken);
 
             if (_callbackEndPoint == null)
                 await _remoteWriter.WriteAsync(data, cancellationToken);
@@ -98,6 +103,7 @@ namespace ZeroPipeline
                 );
             }
 
+            cancellationTokenRegistration.Dispose();
             return id;
         }
 
