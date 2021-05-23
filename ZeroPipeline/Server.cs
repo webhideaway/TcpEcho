@@ -144,7 +144,6 @@ namespace ZeroPipeline
         protected override async Task<Message[]> ProcessRequestAsync(Message request,
             CancellationToken cancellationToken = default)
         {
-            var id = request.Id;
             var type = Type.GetType(request.TypeName);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
@@ -154,24 +153,36 @@ namespace ZeroPipeline
                     {
                         try
                         {
-                            var type = Type.GetType(request.TypeName);
-                            var input = _formatter.Deserialize(type, request.RawData);
-                            var output = handler.DynamicInvoke(input);
-                            var raw = _formatter.Serialize(type, output);
-                            return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
+                            return HandleRequest(request, handler);
                         }
-                        catch (Exception ex)
+                        catch (Exception exception)
                         {
-                            var exception = ex.GetBaseException();
-                            var type = exception.GetType();
-                            var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
-                            var raw = Encoding.ASCII.GetBytes(output);
-                            return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
+                            return HandleException(request.Id, exception.GetBaseException());
                         }
-                    }, cancellationToken)
+                    }, cancellationToken).ContinueWith(task => 
+                    {
+                        return HandleException(request.Id, task.Exception?.Flatten()?.GetBaseException());
+                    }, 
+                    TaskContinuationOptions.NotOnRanToCompletion)
                 ));
             }
             return new Message[] { };
+        }
+        private Message HandleRequest(Message request, Delegate handler)
+        {
+            var type = Type.GetType(request.TypeName);
+            var input = _formatter.Deserialize(type, request.RawData);
+            var output = handler.DynamicInvoke(input);
+            var raw = _formatter.Serialize(type, output);
+            return Message.Create(id: request.Id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
+        }
+
+        private Message HandleException(string id, Exception exception)
+        {
+            var type = exception.GetType();
+            var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
+            var raw = Encoding.ASCII.GetBytes(output);
+            return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
         }
 
         protected virtual void Dispose(bool disposing)
