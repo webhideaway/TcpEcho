@@ -149,7 +149,8 @@ namespace ZeroPipeline
             {
                 var invocationList = handlers.GetInvocationList();
                 return await Task.WhenAll(invocationList.Select(handler =>
-                    Task<Message>.Factory.StartNew(() =>
+                {
+                    var task = Task<Message>.Factory.StartNew(() =>
                     {
                         try
                         {
@@ -159,12 +160,16 @@ namespace ZeroPipeline
                         {
                             return HandleException(request.Id, exception.GetBaseException());
                         }
-                    }, cancellationToken).ContinueWith(task => 
+                    }, cancellationToken);
+
+                    task.ContinueWith(task =>
                     {
                         return HandleException(request.Id, task.Exception?.Flatten()?.GetBaseException());
-                    }, 
-                    TaskContinuationOptions.NotOnRanToCompletion)
-                ));
+                    },
+                    TaskContinuationOptions.NotOnRanToCompletion);
+
+                    return task;
+                }));
             }
             return new Message[] { };
         }
