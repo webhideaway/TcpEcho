@@ -15,7 +15,7 @@ namespace ZeroPipeline.Interfaces
 {
     public abstract class Processor : IProcessor
     {
-        protected readonly ConcurrentDictionary<string, CancellationTokenSource> CancellationTokenSources = new();
+        private readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokenSources = new();
 
         protected abstract Task<Message[]> ProcessRequestAsync(Message request,
             CancellationToken cancellationToken = default);
@@ -25,7 +25,7 @@ namespace ZeroPipeline.Interfaces
         {
             while (TryReadRequest(ref buffer, out Message request))
             {
-                RegisterCancellationTokenSource(request.Id, request.Timeout, out CancellationToken cancellationToken);
+                RegisterCancellationTokenSource(request, out CancellationToken cancellationToken);
 
                 input?.Invoke(request);
                 var responses = await ProcessRequestAsync(request, cancellationToken);
@@ -46,11 +46,21 @@ namespace ZeroPipeline.Interfaces
             return buffer.Start;
         }
 
-        private void RegisterCancellationTokenSource(string id, TimeSpan timeout, out CancellationToken cancellationToken)
+        private void RegisterCancellationTokenSource(Message message, out CancellationToken cancellationToken)
         {
-            var cancellationTokenSource = new CancellationTokenSource(timeout);
-            CancellationTokenSources.TryAdd(id, cancellationTokenSource);
-            cancellationToken = cancellationTokenSource.Token;
+            cancellationToken = default;
+            var type = Type.GetType(message.TypeName);
+            if (type.IsAssignableFrom(typeof(CancellationToken)))
+            {
+                if (_cancellationTokenSources.TryRemove(message.Id, out CancellationTokenSource cancellationTokenSource))
+                    using (cancellationTokenSource) cancellationTokenSource.Cancel(false);
+            }
+            else
+            {
+                var cancellationTokenSource = new CancellationTokenSource(message.Timeout);
+                if (_cancellationTokenSources.TryAdd(message.Id, cancellationTokenSource))
+                    cancellationToken = cancellationTokenSource.Token;
+            }
         }
 
         private PipeWriter GetWriter(Message message)

@@ -57,26 +57,12 @@ namespace ZeroPipeline
 
         private object ProcessMessage(Message message)
         {
-            CancellationTokenSources.TryRemove(message.Id, 
-                out CancellationTokenSource cancellationTokenSource);
-
             var type = Type.GetType(message.TypeName);
-            object value = null;
-
+            object value;
             if (type.IsAssignableFrom(typeof(Exception)))
-            {
                 value = Encoding.ASCII.GetString(message.RawData);
-            }
-            else if (type.IsAssignableFrom(typeof(CancellationToken)))
-            {
-                cancellationTokenSource?.Cancel(false);
-            }
             else
-            {
                 value = _formatter.Deserialize(type, message.RawData);
-            }
-
-            cancellationTokenSource?.Dispose();
             return value;
         }
 

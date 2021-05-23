@@ -85,7 +85,7 @@ namespace ZeroPipeline
         {
             timeout = timeout.Equals(default) ? Timeout.InfiniteTimeSpan : timeout;
             var data = ProcessRequest(request, timeout, out string id);
-            var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken);
+            using (var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken)) 
 
             if (_callbackEndPoint == null)
                 await _remoteWriter.WriteAsync(data);
@@ -104,7 +104,6 @@ namespace ZeroPipeline
                 );
             }
 
-            cancellationTokenRegistration.Dispose();
             return id;
         }
 
