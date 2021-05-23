@@ -57,9 +57,9 @@ namespace ZeroPipeline
             return data;
         }
 
-        private object ProcessMessage(Message message)
+        private object ProcessMessage(Message message, out Type type)
         {
-            var type = Type.GetType(message.TypeName);
+            type = Type.GetType(message.TypeName);
             return type.IsAssignableFrom(typeof(Exception))
                 ? Encoding.ASCII.GetString(message.RawData)
                 : _formatter.Deserialize(type, message.RawData);
@@ -97,8 +97,8 @@ namespace ZeroPipeline
                     {
                         if (id == callback.Id)
                         {
-                            var response = ProcessMessage(callback);
-                            responseHandler?.Invoke(response.GetType(), response);
+                            var response = ProcessMessage(callback, out Type type);
+                            responseHandler?.Invoke(type, response);
                         }
                     })
                 );

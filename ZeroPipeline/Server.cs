@@ -55,9 +55,9 @@ namespace ZeroPipeline
             return PipeReader.Create(stream, reader);
         }
 
-        private object ProcessMessage(Message message)
+        private object ProcessMessage(Message message, out Type type)
         {
-            var type = Type.GetType(message.TypeName);
+            type = Type.GetType(message.TypeName);
             object value;
             if (type.IsAssignableFrom(typeof(Exception)))
                 value = Encoding.ASCII.GetString(message.RawData);
@@ -67,8 +67,8 @@ namespace ZeroPipeline
         }
 
         public async Task ListenAsync(
-            Action<object> input = null,
-            Action<object, bool> output = null)
+            Action<Type, object> input = null,
+            Action<Type, object, bool> output = null)
         {
             while (true)
             {
@@ -88,8 +88,14 @@ namespace ZeroPipeline
                                 break;
 
                             consumed = await ProcessMessagesAsync(buffer,
-                                message => input?.Invoke(ProcessMessage(message)),
-                                (message, done) => output?.Invoke(ProcessMessage(message), done)
+                                message => {
+                                    var value = ProcessMessage(message, out Type type);
+                                    input?.Invoke(type, value);
+                                },
+                                (message, done) => {
+                                    var value = ProcessMessage(message, out Type type);
+                                    output?.Invoke(type, value, done);
+                                }
                             );
 
                             if (readResult.IsCompleted)

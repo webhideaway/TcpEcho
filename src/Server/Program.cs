@@ -34,14 +34,14 @@ namespace Server
                 return response;
             });
 
-            await server.ListenAsync(input: request =>
+            await server.ListenAsync(input: (type, request) =>
             {
-                if (request.GetType().IsAssignableFrom(typeof(Person)))
+                if (type.IsAssignableFrom(typeof(Person)))
                 {
                     var person = (Person)request;
                     Console.WriteLine($"PERSON [REQUEST] [Name = {person.Name}, Age = {person.Age}]");
                 }
-                if (request.GetType().IsAssignableFrom(typeof(Car)))
+                if (type.IsAssignableFrom(typeof(Car)))
                 {
                     var car = (Car)request;
                     Console.WriteLine($"CAR [REQUEST] [Brand = {car.Brand}, Age = {car.Age}]");
