@@ -153,9 +153,9 @@ namespace ZeroPipeline
                         return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
                     }, 
                     cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Current).
-                    ContinueWith<Message>(_ => {
-                        var exception = _.Exception?.Flatten()?.GetBaseException() 
-                            ?? new Exception(id, new TaskCanceledException(_));
+                    ContinueWith<Message>(_ => 
+                    {
+                        var exception = _.Exception?.Flatten()?.GetBaseException();
                         var type = exception.GetType();
                         var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
                         var raw = Encoding.ASCII.GetBytes(output);
