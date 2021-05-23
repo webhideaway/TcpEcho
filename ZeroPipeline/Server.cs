@@ -160,7 +160,7 @@ namespace ZeroPipeline
                         var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
                         var raw = Encoding.ASCII.GetBytes(output);
                         return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
-                    }, CancellationToken.None, TaskContinuationOptions.NotOnRanToCompletion, TaskScheduler.Current)
+                    }, TaskContinuationOptions.NotOnRanToCompletion)
                 ));
             }
             return new Message[] { };
