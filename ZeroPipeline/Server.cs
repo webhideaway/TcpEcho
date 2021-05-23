@@ -146,20 +146,23 @@ namespace ZeroPipeline
                 return await Task.WhenAll(invocationList.Select(handler =>
                     Task<Message>.Factory.StartNew(() =>
                     {
-                        var type = Type.GetType(request.TypeName);
-                        var input = _formatter.Deserialize(type, request.RawData);
-                        var output = handler.DynamicInvoke(input);
-                        var raw = _formatter.Serialize(type, output);
-                        return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
-                    }, cancellationToken).
-                    ContinueWith<Message>(_ => 
-                    {
-                        var exception = _.Exception?.Flatten()?.GetBaseException();
-                        var type = exception.GetType();
-                        var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
-                        var raw = Encoding.ASCII.GetBytes(output);
-                        return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
-                    }, TaskContinuationOptions.NotOnRanToCompletion)
+                        try
+                        {
+                            var type = Type.GetType(request.TypeName);
+                            var input = _formatter.Deserialize(type, request.RawData);
+                            var output = handler.DynamicInvoke(input);
+                            var raw = _formatter.Serialize(type, output);
+                            return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
+                        }
+                        catch (Exception ex)
+                        {
+                            var exception = ex.GetBaseException();
+                            var type = exception.GetType();
+                            var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
+                            var raw = Encoding.ASCII.GetBytes(output);
+                            return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
+                        }
+                    }, cancellationToken)
                 ));
             }
             return new Message[] { };
