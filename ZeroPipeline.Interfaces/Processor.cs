@@ -53,7 +53,7 @@ namespace ZeroPipeline.Interfaces
             {
                 var type = Type.GetType(message.TypeName);
                 if (type.IsAssignableFrom(typeof(CancellationToken)))
-                    cancellationTokenSource.Cancel(false);
+                    cancellationTokenSource.Cancel();
             }
             else
             { 
