@@ -69,7 +69,7 @@ namespace ZeroPipeline
             }
             else if (type.IsAssignableFrom(typeof(CancellationToken)))
             {
-                cancellationTokenSource?.Cancel();
+                cancellationTokenSource?.Cancel(false);
             }
             else
             {
