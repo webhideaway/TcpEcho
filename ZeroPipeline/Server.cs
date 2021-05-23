@@ -151,8 +151,7 @@ namespace ZeroPipeline
                         var output = handler.DynamicInvoke(input);
                         var raw = _formatter.Serialize(type, output);
                         return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
-                    }, 
-                    cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Current).
+                    }, cancellationToken).
                     ContinueWith<Message>(_ => 
                     {
                         var exception = _.Exception?.Flatten()?.GetBaseException();
