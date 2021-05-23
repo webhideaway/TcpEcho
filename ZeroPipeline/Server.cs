@@ -164,7 +164,7 @@ namespace ZeroPipeline
                         var input = _formatter.Deserialize(type, request.RawData);
                         var output = handler.DynamicInvoke(input);
                         var raw = _formatter.Serialize(type, output);
-                        return Message.Create(id : id, type : type, rawData: raw);
+                        return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
                     }, 
                     cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Current).
                     ContinueWith<Message>(_ => {
@@ -173,7 +173,7 @@ namespace ZeroPipeline
                         var type = exception.GetType();
                         var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
                         var raw = Encoding.ASCII.GetBytes(output);
-                        return Message.Create(id: id, type: type, rawData: raw);
+                        return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
                     }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted & TaskContinuationOptions.OnlyOnCanceled, TaskScheduler.Current)
                 ));
             }

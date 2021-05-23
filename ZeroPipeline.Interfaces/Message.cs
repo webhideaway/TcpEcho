@@ -47,7 +47,7 @@ namespace ZeroPipeline.Interfaces
             return Create(Guid.NewGuid().ToString(), typeof(TRequest), timeout, rawData, callbackEndPoint);
         }
 
-        public static Message Create(string id, Type type, TimeSpan timeout = default, byte[] rawData = null, IPEndPoint callbackEndPoint = null)
+        public static Message Create(string id, Type type, TimeSpan timeout, byte[] rawData = null, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
                 id: id,

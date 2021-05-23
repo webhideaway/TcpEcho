@@ -69,7 +69,7 @@ namespace ZeroPipeline
         {
             return cancellationToken.Register(id =>
             {
-                var cancellationMessage = Message.Create(id.ToString(), typeof(CancellationToken));
+                var cancellationMessage = Message.Create(id.ToString(), typeof(CancellationToken), Timeout.InfiniteTimeSpan);
                 var cancellationData = new byte[] { };
                 BinaryUtil.WriteBytes(ref cancellationData, 0, Message.BOM);
                 ZeroFormatterSerializer.Serialize(ref cancellationData, Message.BOM.Length, cancellationMessage);
@@ -83,6 +83,7 @@ namespace ZeroPipeline
             TimeSpan timeout = default,
             CancellationToken cancellationToken = default)
         {
+            timeout = timeout.Equals(default) ? Timeout.InfiniteTimeSpan : timeout;
             var data = ProcessRequest(request, timeout, out string id);
             var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken);
 
