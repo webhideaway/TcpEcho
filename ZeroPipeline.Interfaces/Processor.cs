@@ -27,8 +27,8 @@ namespace ZeroPipeline.Interfaces
             {
                 input?.Invoke(request);
 
-                RegisterCancellationTokenSource(request, out CancellationTokenSource cancellationTokenSource);
-                var responses = await ProcessRequestAsync(request, cancellationTokenSource.Token);
+                RegisterCancellationTokenSource(request, out CancellationToken cancellationToken);
+                var responses = await ProcessRequestAsync(request, cancellationToken);
                 UnregisterCancellationTokenSource(request);
 
                 var writer = GetWriter(request);
@@ -47,25 +47,33 @@ namespace ZeroPipeline.Interfaces
             return buffer.Start;
         }
 
-        private void RegisterCancellationTokenSource(Message message, out CancellationTokenSource cancellationTokenSource)
+        private void RegisterCancellationTokenSource(Message message, 
+            out CancellationToken cancellationToken)
         {
-            if (_cancellationTokenSources.TryGetValue(message.Id, out cancellationTokenSource))
+            cancellationToken = default;
+            var type = Type.GetType(message.TypeName);
+
+            if (type.IsAssignableFrom(typeof(CancellationToken)))
             {
-                var type = Type.GetType(message.TypeName);
-                if (type.IsAssignableFrom(typeof(CancellationToken)))
-                    cancellationTokenSource.Cancel();
+                if (_cancellationTokenSources.TryGetValue(message.Id, 
+                    out CancellationTokenSource cancellationTokenSource))
+                        cancellationTokenSource.Cancel();
             }
             else
-            { 
-                cancellationTokenSource = new CancellationTokenSource(message.Timeout);
+            {
+                var cancellationTokenSource = new CancellationTokenSource(message.Timeout);
                 if (_cancellationTokenSources.TryAdd(message.Id, cancellationTokenSource))
-                    cancellationTokenSource.Token.ThrowIfCancellationRequested();
+                {
+                    cancellationToken = cancellationTokenSource.Token;
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
             }
         }
 
         private void UnregisterCancellationTokenSource(Message message)
         {
-            if (_cancellationTokenSources.TryRemove(message.Id, out CancellationTokenSource cancellationTokenSource))
+            if (_cancellationTokenSources.TryRemove(message.Id, 
+                out CancellationTokenSource cancellationTokenSource))
             {
                  cancellationTokenSource.Dispose();
             }
