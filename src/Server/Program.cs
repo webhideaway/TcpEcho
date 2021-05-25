@@ -20,7 +20,7 @@ namespace Server
 
             server.RegisterHandler<Person, Person>(request =>
             {
-                Thread.Sleep(random.Next(1000, 5000));
+                Thread.Sleep(random.Next(5000, 15000));
                 if (request.Age < 18) throw new Exception($"Under aged person {request.Name}");
                 return new Person(request.Name.ToLowerInvariant(), request.Age * -1);
 
@@ -28,7 +28,7 @@ namespace Server
 
             server.RegisterHandler<Car, Car>(request =>
             {
-                Thread.Sleep(random.Next(1000, 5000));
+                Thread.Sleep(random.Next(5000, 15000));
                 if (request.Age < 3) throw new Exception($"Under aged car {request.Brand}");
                 return new Car(request.Brand.ToLowerInvariant(), request.Age * -1);
             });

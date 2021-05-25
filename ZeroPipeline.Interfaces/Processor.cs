@@ -25,11 +25,11 @@ namespace ZeroPipeline.Interfaces
         {
             while (TryReadRequest(ref buffer, out Message request))
             {
-                RegisterCancellationTokenSource(request, out CancellationTokenSource cancellationTokenSource);
                 input?.Invoke(request);
 
+                RegisterCancellationTokenSource(request, out CancellationTokenSource cancellationTokenSource);
                 var responses = await ProcessRequestAsync(request, cancellationTokenSource.Token);
-                cancellationTokenSource.Dispose();
+                UnregisterCancellationTokenSource(request);
 
                 var writer = GetWriter(request);
                 if (writer != null)
@@ -49,7 +49,7 @@ namespace ZeroPipeline.Interfaces
 
         private void RegisterCancellationTokenSource(Message message, out CancellationTokenSource cancellationTokenSource)
         {
-            if (_cancellationTokenSources.TryRemove(message.Id, out cancellationTokenSource))
+            if (_cancellationTokenSources.TryGetValue(message.Id, out cancellationTokenSource))
             {
                 var type = Type.GetType(message.TypeName);
                 if (type.IsAssignableFrom(typeof(CancellationToken)))
@@ -60,6 +60,14 @@ namespace ZeroPipeline.Interfaces
                 cancellationTokenSource = new CancellationTokenSource(message.Timeout);
                 if (_cancellationTokenSources.TryAdd(message.Id, cancellationTokenSource))
                     cancellationTokenSource.Token.ThrowIfCancellationRequested();
+            }
+        }
+
+        private void UnregisterCancellationTokenSource(Message message)
+        {
+            if (_cancellationTokenSources.TryRemove(message.Id, out CancellationTokenSource cancellationTokenSource))
+            {
+                 cancellationTokenSource.Dispose();
             }
         }
 
