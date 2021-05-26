@@ -27,7 +27,9 @@ namespace ZeroPipeline.Interfaces
             {
                 input?.Invoke(request);
 
-                var cancellationToken = RegisterCancellationTokenSource(request);
+                var cancellationTokenSource = RegisterCancellationTokenSource(request);
+                var cancellationToken = cancellationTokenSource.Token;
+                cancellationToken.ThrowIfCancellationRequested();
                 var responses = await ProcessRequestAsync(request, cancellationToken);
                 UnregisterCancellationTokenSource(request);
 
@@ -47,7 +49,7 @@ namespace ZeroPipeline.Interfaces
             return buffer.Start;
         }
 
-        private CancellationToken RegisterCancellationTokenSource(Message message)
+        private CancellationTokenSource RegisterCancellationTokenSource(Message message)
         {
             var type = Type.GetType(message.TypeName);
 
@@ -61,11 +63,7 @@ namespace ZeroPipeline.Interfaces
             {
                 var cancellationTokenSource = new CancellationTokenSource(message.Timeout);
                 if (_cancellationTokenSources.TryAdd(message.Id, cancellationTokenSource))
-                {
-                    var cancellationToken = cancellationTokenSource.Token;
-                    cancellationToken.ThrowIfCancellationRequested();
-                    return cancellationToken;
-                }
+                    return cancellationTokenSource;
             }
 
             return default;
