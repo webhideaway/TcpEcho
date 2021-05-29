@@ -57,7 +57,7 @@ namespace Client
                             {
                                 Console.WriteLine(response);
                             }
-                        }, TimeSpan.FromMilliseconds(random.Next(1000, 5000)));
+                        });
                     }
                     else
                     {
@@ -81,7 +81,7 @@ namespace Client
                             {
                                 Console.WriteLine(response);
                             }
-                        }, TimeSpan.FromMilliseconds(random.Next(1000, 5000)));
+                        });
                     }
                 }
 

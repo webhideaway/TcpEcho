@@ -182,7 +182,7 @@ namespace ZeroPipeline
             var input = _formatter.Deserialize(type, request.RawData);
             var output = handler.DynamicInvoke(input);
             var raw = _formatter.Serialize(type, output);
-            return Message.Create(id: request.Id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
+            return Message.Create(id: request.Id, type: type, rawData: raw);
         }
 
         private Message HandleException(string id, Exception exception)
@@ -190,7 +190,7 @@ namespace ZeroPipeline
             var type = exception.GetType();
             var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
             var raw = Encoding.ASCII.GetBytes(output);
-            return Message.Create(id: id, type: type, timeout: Timeout.InfiniteTimeSpan, rawData: raw);
+            return Message.Create(id: id, type: type, rawData: raw);
         }
 
         protected virtual void Dispose(bool disposing)

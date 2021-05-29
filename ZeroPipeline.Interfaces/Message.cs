@@ -11,14 +11,12 @@ namespace ZeroPipeline.Interfaces
         public Message(
             string id = null,
             string typeName = null,
-            TimeSpan timeout = default,
             byte[] callbackAddress = null,
             int callbackPort = 0,
             byte[] rawData = null)
         {
             Id = id;
             TypeName = typeName;
-            Timeout = timeout;
             CallbackAddress = callbackAddress;
             CallbackPort = callbackPort;
             RawData = rawData;
@@ -31,27 +29,23 @@ namespace ZeroPipeline.Interfaces
         public readonly string TypeName;
 
         [Index(2)]
-        public readonly TimeSpan Timeout;
-
-        [Index(3)]
         public readonly byte[] CallbackAddress;
 
-        [Index(4)]
+        [Index(3)]
         public readonly int CallbackPort;
 
-        [Index(5)]
+        [Index(4)]
         public readonly byte[] RawData;
 
-        public static Message Create<TRequest>(byte[] rawData, TimeSpan timeout, IPEndPoint callbackEndPoint)
+        public static Message Create<TRequest>(byte[] rawData, IPEndPoint callbackEndPoint)
         {
-            return Create(Guid.NewGuid().ToString(), typeof(TRequest), timeout, rawData, callbackEndPoint);
+            return Create(Guid.NewGuid().ToString(), typeof(TRequest), rawData, callbackEndPoint);
         }
 
-        public static Message Create(string id, Type type, TimeSpan timeout, byte[] rawData = null, IPEndPoint callbackEndPoint = null)
+        public static Message Create(string id, Type type, byte[] rawData = null, IPEndPoint callbackEndPoint = null)
         {
             return new Message(
                 id: id,
-                timeout: timeout,
                 typeName: $"{type.FullName}, {type.Assembly.FullName}",
                 callbackAddress: callbackEndPoint?.Address.GetAddressBytes(),
                 callbackPort: callbackEndPoint?.Port ?? 0,

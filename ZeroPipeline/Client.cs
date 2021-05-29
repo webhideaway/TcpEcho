@@ -42,10 +42,10 @@ namespace ZeroPipeline
             _remoteWriter = PipeWriter.Create(remoteStream, new StreamPipeWriterOptions(leaveOpen: true));
         }
 
-        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request, TimeSpan timeout, out string id)
+        private ReadOnlyMemory<byte> ProcessRequest<TRequest>(TRequest request, out string id)
         {
             var raw = _formatter.Serialize(request);
-            var message = Message.Create<TRequest>(raw, timeout, _callbackEndPoint);
+            var message = Message.Create<TRequest>(raw, _callbackEndPoint);
             id = message.Id;
 
             var data = new byte[] { };
@@ -69,7 +69,7 @@ namespace ZeroPipeline
         {
             return cancellationToken.Register(id =>
             {
-                var cancellationMessage = Message.Create(id.ToString(), typeof(CancellationToken), Timeout.InfiniteTimeSpan);
+                var cancellationMessage = Message.Create(id.ToString(), typeof(CancellationToken));
                 var cancellationData = new byte[] { };
                 BinaryUtil.WriteBytes(ref cancellationData, 0, Message.BOM);
                 ZeroFormatterSerializer.Serialize(ref cancellationData, Message.BOM.Length, cancellationMessage);
@@ -80,11 +80,9 @@ namespace ZeroPipeline
 
         public async Task<string> PostAsync<TRequest>(TRequest request,
             Action<Type, object> responseHandler = null,
-            TimeSpan timeout = default,
             CancellationToken cancellationToken = default)
         {
-            timeout = timeout.Equals(default) ? Timeout.InfiniteTimeSpan : timeout;
-            var data = ProcessRequest(request, timeout, out string id);
+            var data = ProcessRequest(request, out string id);
             using (var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken)) 
 
             if (_callbackEndPoint == null)

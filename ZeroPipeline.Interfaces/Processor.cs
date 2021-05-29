@@ -59,7 +59,7 @@ namespace ZeroPipeline.Interfaces
             }
             else
             {
-                var cancellationTokenSource = new CancellationTokenSource(message.Timeout);
+                var cancellationTokenSource = new CancellationTokenSource();
                 if (_cancellationTokenSources.TryAdd(message.Id, cancellationTokenSource))
                     return cancellationTokenSource;
             }
