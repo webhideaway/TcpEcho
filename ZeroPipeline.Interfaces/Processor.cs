@@ -28,6 +28,8 @@ namespace ZeroPipeline.Interfaces
                 input?.Invoke(request);
 
                 var cancellationTokenSource = RegisterCancellationTokenSource(request);
+                if (cancellationTokenSource == null) break;
+
                 var responses = await ProcessRequestAsync(request, cancellationTokenSource);
                 UnregisterCancellationTokenSource(request);
 
