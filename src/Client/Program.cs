@@ -57,7 +57,7 @@ namespace Client
                             {
                                 Console.WriteLine(response);
                             }
-                        });
+                        }, new CancellationTokenSource(random.Next(1000, 5000)).Token);
                     }
                     else
                     {
@@ -81,7 +81,7 @@ namespace Client
                             {
                                 Console.WriteLine(response);
                             }
-                        });
+                        }, new CancellationTokenSource(random.Next(1000, 5000)).Token);
                     }
                 }
 
