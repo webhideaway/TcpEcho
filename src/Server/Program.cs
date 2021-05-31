@@ -20,7 +20,7 @@ namespace Server
 
             server.RegisterHandler<Person, Person>(request =>
             {
-                var sleep = random.Next(5000, 15000);
+                var sleep = random.Next(1000, 15000);
                 Thread.Sleep(sleep);
                 if (request.Age < 18)
                 {
@@ -36,9 +36,9 @@ namespace Server
 
             server.RegisterHandler<Car, Car>(request =>
             {
-                var sleep = random.Next(5000, 15000);
+                var sleep = random.Next(1000, 15000);
                 Thread.Sleep(sleep);
-                if (request.Age > 7) 
+                if (request.Age > 5) 
                 {
                     var exception = $"Over aged car {request.Brand}";
                     Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Exception = {exception}]");

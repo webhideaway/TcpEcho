@@ -44,7 +44,7 @@ namespace Client
                             age: random.Next(1, 100)
                         );
 
-                        var timeot = random.Next(1000, 5000);
+                        var timeot = random.Next(1000, 15000);
                         Console.WriteLine($"PERSON [REQUEST ({timeot}ms] [Name = {person.Name}, Age = {person.Age}]");
 
                         await client.PostAsync<Person>(person, (type, response) =>
@@ -70,7 +70,7 @@ namespace Client
                             age: random.Next(1, 10)
                         );
 
-                        var timeot = random.Next(1000, 5000);
+                        var timeot = random.Next(1000, 15000);
                         Console.WriteLine($"CAR [REQUEST ({timeot}ms] [Brand = {car.Brand}, Age = {car.Age}]");
 
                         await client.PostAsync<Car>(car, (type, response) =>
