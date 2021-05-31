@@ -61,6 +61,11 @@ namespace Server
                     var car = (Car)request;
                     Console.WriteLine($"CAR [REQUEST] [Reg = {car.Reg}, Age = {car.Age}]");
                 }
+                if (type.IsAssignableFrom(typeof(CancellationToken)))
+                {
+                    var token = (string)request;
+                    Console.WriteLine($"CANCELLATION [REQUEST] [Token = {token}]");
+                }
             });
         }
     }

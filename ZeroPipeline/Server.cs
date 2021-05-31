@@ -58,9 +58,10 @@ namespace ZeroPipeline
         private object ProcessMessage(Message message, out Type type)
         {
             type = Type.GetType(message.TypeName);
-            if (message.RawData == null) return null;
             object value;
-            if (type.IsAssignableFrom(typeof(Exception)))
+            if (type.IsAssignableFrom(typeof(CancellationToken)))
+                value = message.Id;
+            else if (type.IsAssignableFrom(typeof(Exception)))
                 value = Encoding.ASCII.GetString(message.RawData);
             else
                 value = _formatter.Deserialize(type, message.RawData);
