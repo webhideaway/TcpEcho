@@ -20,32 +20,32 @@ namespace Server
 
             server.RegisterHandler<Person, Person>(request =>
             {
-                var sleep = random.Next(1000, 15000);
-                Thread.Sleep(sleep);
+                var delay = random.Next(1000, 15000);
+                Thread.Sleep(delay);
                 if (request.Age < 18)
                 {
                     var exception = $"Under aged person {request.Name}";
-                    Console.WriteLine($"PERSON [RESPONSE ({sleep}ms)] [Exception = {exception}]");
+                    Console.WriteLine($"PERSON [RESPONSE (delay: {delay}ms)] [Exception = {exception}]");
                     throw new Exception(exception);
                 }
                 var response = new Person(request.Name.ToLowerInvariant(), request.Age * -1);
-                Console.WriteLine($"PERSON [RESPONSE ({sleep}ms)] [Name = {response.Name}, Age = {response.Age}]");
+                Console.WriteLine($"PERSON [RESPONSE (delay: {delay}ms)] [Name = {response.Name}, Age = {response.Age}]");
                 return response;
 
             });
 
             server.RegisterHandler<Car, Car>(request =>
             {
-                var sleep = random.Next(1000, 15000);
-                Thread.Sleep(sleep);
+                var delay = random.Next(1000, 15000);
+                Thread.Sleep(delay);
                 if (request.Age > 5) 
                 {
                     var exception = $"Over aged car {request.Reg}";
-                    Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Exception = {exception}]");
+                    Console.WriteLine($"CAR [RESPONSE (delay: {delay}ms)] [Exception = {exception}]");
                     throw new Exception(exception); 
                 }
                 var response = new Car(request.Reg.ToLowerInvariant(), request.Age * -1);
-                Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Reg = {response.Reg}, Age = {response.Age}]");
+                Console.WriteLine($"CAR [RESPONSE (delay: {delay}ms)] [Reg = {response.Reg}, Age = {response.Age}]");
                 return response;
             });
 

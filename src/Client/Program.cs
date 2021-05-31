@@ -44,8 +44,8 @@ namespace Client
                             age: random.Next(1, 100)
                         );
 
-                        var timeot = random.Next(1000, 15000);
-                        Console.WriteLine($"PERSON [REQUEST ({timeot}ms] [Name = {person.Name}, Age = {person.Age}]");
+                        var timeout = random.Next(1000, 15000);
+                        Console.WriteLine($"PERSON [REQUEST (timeout: {timeout}ms] [Name = {person.Name}, Age = {person.Age}]");
 
                         await client.PostAsync<Person>(person, (type, response) =>
                         {
@@ -70,8 +70,8 @@ namespace Client
                             age: random.Next(1, 10)
                         );
 
-                        var timeot = random.Next(1000, 15000);
-                        Console.WriteLine($"CAR [REQUEST ({timeot}ms] [Reg = {car.Reg}, Age = {car.Age}]");
+                        var timeout = random.Next(1000, 15000);
+                        Console.WriteLine($"CAR [REQUEST (timeout: {timeout}ms] [Reg = {car.Reg}, Age = {car.Age}]");
 
                         await client.PostAsync<Car>(car, (type, response) =>
                         {
@@ -85,7 +85,7 @@ namespace Client
                                 var exception = (string)response;
                                 Console.WriteLine($"CAR [RESPONSE] [Exception = {exception}]");
                             }
-                        }, new CancellationTokenSource(timeot).Token);
+                        }, new CancellationTokenSource(timeout).Token);
                     }
                 }
 
