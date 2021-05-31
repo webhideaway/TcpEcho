@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ZeroFormatter;
@@ -55,9 +54,12 @@ namespace ZeroPipeline.Interfaces
 
             if (type.IsAssignableFrom(typeof(CancellationToken)))
             {
-                if (_cancellationTokenSources.TryGetValue(message.Id, 
+                if (_cancellationTokenSources.TryRemove(message.Id,
                     out CancellationTokenSource cancellationTokenSource))
-                        cancellationTokenSource.Cancel();
+                {
+                    cancellationTokenSource.Cancel();
+                    cancellationTokenSource.Dispose();
+                }
             }
             else
             {
@@ -76,10 +78,10 @@ namespace ZeroPipeline.Interfaces
 
         private void UnregisterCancellationToken(Message message)
         {
-            if (_cancellationTokenSources.TryRemove(message.Id, 
+            if (_cancellationTokenSources.TryRemove(message.Id,
                 out CancellationTokenSource cancellationTokenSource))
             {
-                 cancellationTokenSource.Dispose();
+                cancellationTokenSource.Dispose();
             }
         }
 

@@ -84,26 +84,26 @@ namespace ZeroPipeline
             CancellationToken cancellationToken = default)
         {
             var data = ProcessRequest(request, out string id);
-            
-            if (!cancellationToken.Equals(default))
-                using (var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken)) 
 
-            if (_callbackEndPoint == null)
-                await _remoteWriter.WriteAsync(data);
-            else
-            {
-                await Task.WhenAll(
-                    _remoteWriter.WriteAsync(data).AsTask(),
-                    _callbackListener.CallbackAsync(callback =>
+            if (!cancellationToken.Equals(default))
+                using (var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken))
+
+                    if (_callbackEndPoint == null)
+                        await _remoteWriter.WriteAsync(data);
+                    else
                     {
-                        if (id == callback.Id)
-                        {
-                            var response = ProcessMessage(callback, out Type type);
-                            responseHandler?.Invoke(type, response);
-                        }
-                    })
-                );
-            }
+                        await Task.WhenAll(
+                            _remoteWriter.WriteAsync(data).AsTask(),
+                            _callbackListener.CallbackAsync(callback =>
+                            {
+                                if (id == callback.Id)
+                                {
+                                    var response = ProcessMessage(callback, out Type type);
+                                    responseHandler?.Invoke(type, response);
+                                }
+                            })
+                        );
+                    }
 
             return id;
         }

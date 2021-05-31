@@ -89,11 +89,13 @@ namespace ZeroPipeline
                                 break;
 
                             consumed = await ProcessMessagesAsync(buffer,
-                                message => {
+                                message =>
+                                {
                                     var value = ProcessMessage(message, out Type type);
                                     input?.Invoke(type, value);
                                 },
-                                (message, done) => {
+                                (message, done) =>
+                                {
                                     var value = ProcessMessage(message, out Type type);
                                     output?.Invoke(type, value, done);
                                 }

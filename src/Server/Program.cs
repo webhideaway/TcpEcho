@@ -38,11 +38,11 @@ namespace Server
             {
                 var delay = random.Next(1000, 15000);
                 Thread.Sleep(delay);
-                if (request.Age > 5) 
+                if (request.Age > 5)
                 {
                     var exception = $"Over aged car {request.Reg}";
                     Console.WriteLine($"CAR [RESPONSE (delay: {delay}ms)] [Exception = {exception}]");
-                    throw new Exception(exception); 
+                    throw new Exception(exception);
                 }
                 var response = new Car(request.Reg.ToLowerInvariant(), request.Age * -1);
                 Console.WriteLine($"CAR [RESPONSE (delay: {delay}ms)] [Reg = {response.Reg}, Age = {response.Age}]");
