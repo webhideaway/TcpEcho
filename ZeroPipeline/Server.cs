@@ -143,11 +143,8 @@ namespace ZeroPipeline
         }
 
         protected override async Task<Message[]> ProcessRequestAsync(Message request,
-            CancellationTokenSource cancellationTokenSource)
+            CancellationToken cancellationToken)
         {
-            var cancellationToken = cancellationTokenSource.Token;
-            cancellationToken.ThrowIfCancellationRequested();
-
             var type = Type.GetType(request.TypeName);
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {

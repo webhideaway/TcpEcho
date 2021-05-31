@@ -18,7 +18,7 @@ namespace ZeroPipeline.Interfaces
         private static readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokenSources = new();
 
         protected abstract Task<Message[]> ProcessRequestAsync(Message request,
-            CancellationTokenSource cancellationTokenSource);
+            CancellationToken cancellationToken);
 
         public async Task<SequencePosition> ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
             Action<Message> input = null, Action<Message, bool> output = null)
@@ -28,10 +28,12 @@ namespace ZeroPipeline.Interfaces
                 input?.Invoke(request);
 
                 var cancellationTokenSource = RegisterCancellationTokenSource(request);
-                if (cancellationTokenSource == null) 
-                    break;
+                if (cancellationTokenSource == null) break;
 
-                var responses = await ProcessRequestAsync(request, cancellationTokenSource);
+                var cancellationToken = cancellationTokenSource.Token;
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var responses = await ProcessRequestAsync(request, cancellationToken);
                 UnregisterCancellationTokenSource(request);
 
                 var writer = GetWriter(request);
