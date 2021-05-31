@@ -27,32 +27,29 @@ namespace ZeroPipeline.Interfaces
             {
                 input?.Invoke(request);
 
-                var cancellationTokenSource = RegisterCancellationTokenSource(request);
-                if (cancellationTokenSource == null) break;
-
-                var cancellationToken = cancellationTokenSource.Token;
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var responses = await ProcessRequestAsync(request, cancellationToken);
-                UnregisterCancellationTokenSource(request);
-
-                var writer = GetWriter(request);
-                if (writer != null)
+                if (TryRegisterCancellationTokenSource(request, out CancellationToken cancellationToken))
                 {
-                    var count = responses.Length;
-                    for (var index = 0; index < count; index++)
-                        output?.Invoke(responses[index], index == count - 1);
+                    var responses = await ProcessRequestAsync(request, cancellationToken);
+                    UnregisterCancellationTokenSource(request);
 
-                    await foreach (var writeResult in WriteResponsesAsync(writer, responses))
-                        if (writeResult.IsCanceled || writeResult.IsCompleted)
-                            continue;
+                    var writer = GetWriter(request);
+                    if (writer != null)
+                    {
+                        var count = responses.Length;
+                        for (var index = 0; index < count; index++)
+                            output?.Invoke(responses[index], index == count - 1);
+
+                        await foreach (var writeResult in WriteResponsesAsync(writer, responses))
+                            if (writeResult.IsCanceled || writeResult.IsCompleted)
+                                continue;
+                    }
                 }
             }
 
             return buffer.Start;
         }
 
-        private CancellationTokenSource RegisterCancellationTokenSource(Message message)
+        private bool TryRegisterCancellationTokenSource(Message message, out CancellationToken cancellationToken)
         {
             var type = Type.GetType(message.TypeName);
 
@@ -66,10 +63,15 @@ namespace ZeroPipeline.Interfaces
             {
                 var cancellationTokenSource = new CancellationTokenSource();
                 if (_cancellationTokenSources.TryAdd(message.Id, cancellationTokenSource))
-                    return cancellationTokenSource;
+                {
+                    cancellationToken = cancellationTokenSource.Token;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return true;
+                }
             }
 
-            return default;
+            cancellationToken = CancellationToken.None;
+            return false;
         }
 
         private void UnregisterCancellationTokenSource(Message message)
