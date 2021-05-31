@@ -44,7 +44,8 @@ namespace Client
                             age: random.Next(1, 100)
                         );
 
-                        Console.WriteLine($"PERSON [REQUEST] [Name = {person.Name}, Age = {person.Age}]");
+                        var timeot = random.Next(1000, 5000);
+                        Console.WriteLine($"PERSON [REQUEST ({timeot}ms] [Name = {person.Name}, Age = {person.Age}]");
 
                         await client.PostAsync<Person>(person, (type, response) =>
                         {
@@ -68,7 +69,8 @@ namespace Client
                             age: random.Next(1, 10)
                         );
 
-                        Console.WriteLine($"CAR [REQUEST] [Brand = {car.Brand}, Age = {car.Age}]");
+                        var timeot = random.Next(1000, 5000);
+                        Console.WriteLine($"CAR [REQUEST ({timeot}ms] [Brand = {car.Brand}, Age = {car.Age}]");
 
                         await client.PostAsync<Car>(car, (type, response) =>
                         {
@@ -81,7 +83,7 @@ namespace Client
                             {
                                 Console.WriteLine(response);
                             }
-                        }, new CancellationTokenSource(random.Next(1000, 5000)).Token);
+                        }, new CancellationTokenSource(timeot).Token);
                     }
                 }
 

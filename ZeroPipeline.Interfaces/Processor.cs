@@ -15,7 +15,7 @@ namespace ZeroPipeline.Interfaces
 {
     public abstract class Processor : IProcessor
     {
-        private readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokenSources = new();
+        private static readonly ConcurrentDictionary<string, CancellationTokenSource> _cancellationTokenSources = new();
 
         protected abstract Task<Message[]> ProcessRequestAsync(Message request,
             CancellationTokenSource cancellationTokenSource);
@@ -28,7 +28,8 @@ namespace ZeroPipeline.Interfaces
                 input?.Invoke(request);
 
                 var cancellationTokenSource = RegisterCancellationTokenSource(request);
-                if (cancellationTokenSource == null) break;
+                if (cancellationTokenSource == null) 
+                    break;
 
                 var responses = await ProcessRequestAsync(request, cancellationTokenSource);
                 UnregisterCancellationTokenSource(request);

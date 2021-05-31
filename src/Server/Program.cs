@@ -20,17 +20,23 @@ namespace Server
 
             server.RegisterHandler<Person, Person>(request =>
             {
-                Thread.Sleep(random.Next(5000, 15000));
+                var sleep = random.Next(5000, 15000);
+                Thread.Sleep(sleep);
                 if (request.Age < 18) throw new Exception($"Under aged person {request.Name}");
-                return new Person(request.Name.ToLowerInvariant(), request.Age * -1);
+                var response = new Person(request.Name.ToLowerInvariant(), request.Age * -1);
+                Console.WriteLine($"PERSON [RESPONSE ({sleep}ms)] [Name = {response.Name}, Age = {response.Age}]");
+                return response;
 
             });
 
             server.RegisterHandler<Car, Car>(request =>
             {
-                Thread.Sleep(random.Next(5000, 15000));
+                var sleep = random.Next(5000, 15000);
+                Thread.Sleep(sleep);
                 if (request.Age < 3) throw new Exception($"Under aged car {request.Brand}");
-                return new Car(request.Brand.ToLowerInvariant(), request.Age * -1);
+                var response = new Car(request.Brand.ToLowerInvariant(), request.Age * -1);
+                Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Brand = {response.Brand}, Age = {response.Age}]");
+                return response;
             });
 
             await server.ListenAsync(input: (type, request) =>
@@ -38,12 +44,12 @@ namespace Server
                 if (type.IsAssignableFrom(typeof(Person)))
                 {
                     var person = (Person)request;
-                    Console.WriteLine($"PERSON [RECEIVED] [Name = {person.Name}, Age = {person.Age}]");
+                    Console.WriteLine($"PERSON [REQUEST] [Name = {person.Name}, Age = {person.Age}]");
                 }
                 if (type.IsAssignableFrom(typeof(Car)))
                 {
                     var car = (Car)request;
-                    Console.WriteLine($"CAR [RECEIVED] [Brand = {car.Brand}, Age = {car.Age}]");
+                    Console.WriteLine($"CAR [REQUEST] [Brand = {car.Brand}, Age = {car.Age}]");
                 }
             });
         }
