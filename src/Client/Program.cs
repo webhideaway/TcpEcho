@@ -65,20 +65,20 @@ namespace Client
                     {
                         var car = new Car
                         (
-                            brand: new string(Enumerable.Range(1, random.Next(5, 15)).
+                            reg: new string(Enumerable.Range(1, random.Next(5, 15)).
                                 Select(_ => Convert.ToChar(random.Next(65, 90))).ToArray()),
                             age: random.Next(1, 10)
                         );
 
                         var timeot = random.Next(1000, 15000);
-                        Console.WriteLine($"CAR [REQUEST ({timeot}ms] [Brand = {car.Brand}, Age = {car.Age}]");
+                        Console.WriteLine($"CAR [REQUEST ({timeot}ms] [Reg = {car.Reg}, Age = {car.Age}]");
 
                         await client.PostAsync<Car>(car, (type, response) =>
                         {
                             if (type == typeof(Car))
                             {
                                 var callback = (Car)response;
-                                Console.WriteLine($"CAR [RESPONSE] [Brand = {callback.Brand}, Age = {callback.Age}]");
+                                Console.WriteLine($"CAR [RESPONSE] [Reg = {callback.Reg}, Age = {callback.Age}]");
                             }
                             else if (type == typeof(Exception))
                             {

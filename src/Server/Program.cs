@@ -40,12 +40,12 @@ namespace Server
                 Thread.Sleep(sleep);
                 if (request.Age > 5) 
                 {
-                    var exception = $"Over aged car {request.Brand}";
+                    var exception = $"Over aged car {request.Reg}";
                     Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Exception = {exception}]");
                     throw new Exception(exception); 
                 }
-                var response = new Car(request.Brand.ToLowerInvariant(), request.Age * -1);
-                Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Brand = {response.Brand}, Age = {response.Age}]");
+                var response = new Car(request.Reg.ToLowerInvariant(), request.Age * -1);
+                Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Reg = {response.Reg}, Age = {response.Age}]");
                 return response;
             });
 
@@ -59,7 +59,7 @@ namespace Server
                 if (type.IsAssignableFrom(typeof(Car)))
                 {
                     var car = (Car)request;
-                    Console.WriteLine($"CAR [REQUEST] [Brand = {car.Brand}, Age = {car.Age}]");
+                    Console.WriteLine($"CAR [REQUEST] [Reg = {car.Reg}, Age = {car.Age}]");
                 }
             });
         }
