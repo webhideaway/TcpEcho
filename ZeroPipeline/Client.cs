@@ -101,7 +101,7 @@ namespace ZeroPipeline
                                     var response = ProcessMessage(callback, out Type type);
                                     responseHandler?.Invoke(type, response);
                                 }
-                            })
+                            }, cancellationToken)
                         );
                     }
 
