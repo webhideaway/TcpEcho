@@ -20,13 +20,14 @@ namespace ZeroPipeline.Interfaces
             CancellationToken cancellationToken);
 
         public async Task<SequencePosition> ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
-            Action<Message> input = null, Action<Message, bool> output = null)
+            Action<Message> input = null, Action<Message, bool> output = null,
+            CancellationToken cancellationToken = default)
         {
             while (TryReadRequest(ref buffer, out Message request))
             {
                 input?.Invoke(request);
 
-                if (TryRegisterCancellationToken(request, out CancellationToken cancellationToken))
+                if (TryRegisterCancellationToken(request, ref cancellationToken))
                 {
                     var responses = await ProcessRequestAsync(request, cancellationToken);
                     UnregisterCancellationToken(request);
@@ -48,7 +49,7 @@ namespace ZeroPipeline.Interfaces
             return buffer.Start;
         }
 
-        private bool TryRegisterCancellationToken(Message message, out CancellationToken cancellationToken)
+        private bool TryRegisterCancellationToken(Message message, ref CancellationToken cancellationToken)
         {
             var type = Type.GetType(message.TypeName);
 
@@ -60,20 +61,21 @@ namespace ZeroPipeline.Interfaces
                     cancellationTokenSource.Cancel();
                     cancellationTokenSource.Dispose();
                 }
+                return false;
             }
             else
             {
-                var cancellationTokenSource = new CancellationTokenSource();
-                if (_cancellationTokenSources.TryAdd(message.Id, cancellationTokenSource))
+                if (cancellationToken.Equals(default))
                 {
-                    cancellationToken = cancellationTokenSource.Token;
-                    cancellationToken.ThrowIfCancellationRequested();
-                    return true;
+                    var cancellationTokenSource = new CancellationTokenSource();
+                    if (_cancellationTokenSources.TryAdd(message.Id, cancellationTokenSource))
+                    {
+                        cancellationToken = cancellationTokenSource.Token;
+                        cancellationToken.ThrowIfCancellationRequested();
+                    }
                 }
+                return true;
             }
-
-            cancellationToken = CancellationToken.None;
-            return false;
         }
 
         private void UnregisterCancellationToken(Message message)

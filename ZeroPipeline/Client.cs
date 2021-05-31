@@ -89,11 +89,11 @@ namespace ZeroPipeline
                 using (var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken))
 
                     if (_callbackEndPoint == null)
-                        await _remoteWriter.WriteAsync(data);
+                        await _remoteWriter.WriteAsync(data, cancellationToken);
                     else
                     {
                         await Task.WhenAll(
-                            _remoteWriter.WriteAsync(data).AsTask(),
+                            _remoteWriter.WriteAsync(data, cancellationToken).AsTask(),
                             _callbackListener.CallbackAsync(callback =>
                             {
                                 if (id == callback.Id)
