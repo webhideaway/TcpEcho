@@ -59,7 +59,7 @@ namespace Client
                                 var exception = (string)response;
                                 Console.WriteLine($"PERSON [RESPONSE] [Exception = {exception}]");
                             }
-                        }, new CancellationTokenSource(random.Next(1000, 5000)).Token);
+                        }, new CancellationTokenSource(timeout).Token);
                     }
                     else
                     {
