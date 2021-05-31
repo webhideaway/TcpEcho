@@ -189,7 +189,7 @@ namespace ZeroPipeline
         private Message HandleException(string id, Exception exception)
         {
             var type = exception.GetType();
-            var output = $"{exception.Message}{Environment.NewLine}{exception.StackTrace}";
+            var output = $"{exception.Message}";
             var raw = Encoding.ASCII.GetBytes(output);
             return Message.Create(id: id, type: type, rawData: raw);
         }

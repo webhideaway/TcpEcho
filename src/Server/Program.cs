@@ -22,7 +22,12 @@ namespace Server
             {
                 var sleep = random.Next(5000, 15000);
                 Thread.Sleep(sleep);
-                if (request.Age < 18) throw new Exception($"Under aged person {request.Name}");
+                if (request.Age < 18)
+                {
+                    var exception = $"Under aged person {request.Name}";
+                    Console.WriteLine($"PERSON [RESPONSE ({sleep}ms)] [Exception = {exception}]");
+                    throw new Exception(exception);
+                }
                 var response = new Person(request.Name.ToLowerInvariant(), request.Age * -1);
                 Console.WriteLine($"PERSON [RESPONSE ({sleep}ms)] [Name = {response.Name}, Age = {response.Age}]");
                 return response;
@@ -33,7 +38,12 @@ namespace Server
             {
                 var sleep = random.Next(5000, 15000);
                 Thread.Sleep(sleep);
-                if (request.Age < 3) throw new Exception($"Under aged car {request.Brand}");
+                if (request.Age > 7) 
+                {
+                    var exception = $"Over aged car {request.Brand}";
+                    Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Exception = {exception}]");
+                    throw new Exception(exception); 
+                }
                 var response = new Car(request.Brand.ToLowerInvariant(), request.Age * -1);
                 Console.WriteLine($"CAR [RESPONSE ({sleep}ms)] [Brand = {response.Brand}, Age = {response.Age}]");
                 return response;

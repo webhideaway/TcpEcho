@@ -56,7 +56,8 @@ namespace Client
                             }
                             else if (type == typeof(Exception))
                             {
-                                Console.WriteLine(response);
+                                var exception = (Exception)response;
+                                Console.WriteLine($"PERSON [RESPONSE] [Exception = {exception.Message}]");
                             }
                         }, new CancellationTokenSource(random.Next(1000, 5000)).Token);
                     }
@@ -81,7 +82,8 @@ namespace Client
                             }
                             else if (type == typeof(Exception))
                             {
-                                Console.WriteLine(response);
+                                var exception = (Exception)response;
+                                Console.WriteLine($"CAR [RESPONSE] [Exception = {exception.Message}]");
                             }
                         }, new CancellationTokenSource(timeot).Token);
                     }
