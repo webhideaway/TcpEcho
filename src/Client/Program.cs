@@ -33,7 +33,8 @@ namespace Client
 
                 foreach (var idx in Enumerable.Range(0, range).
                     AsParallel().WithDegreeOfParallelism(Environment.ProcessorCount).
-                    WithExecutionMode(ParallelExecutionMode.ForceParallelism))
+                    WithExecutionMode(ParallelExecutionMode.ForceParallelism).
+                    WithMergeOptions(ParallelMergeOptions.NotBuffered))
                 {
                     if (idx % 2 == 0)
                     {
