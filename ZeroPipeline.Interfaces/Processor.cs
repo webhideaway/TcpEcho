@@ -19,34 +19,29 @@ namespace ZeroPipeline.Interfaces
         protected abstract Task<Message[]> ProcessRequestAsync(Message request,
             CancellationToken cancellationToken);
 
-        public async Task<SequencePosition> ProcessMessagesAsync(ReadOnlySequence<byte> buffer,
+        public async Task ProcessMessageAsync(Message request,
             Action<Message> input = null, Action<Message, bool> output = null,
             CancellationToken cancellationToken = default)
         {
-            while (TryReadRequest(ref buffer, out Message request))
+            input?.Invoke(request);
+
+            if (TryRegisterCancellationToken(request, ref cancellationToken))
             {
-                input?.Invoke(request);
+                var responses = await ProcessRequestAsync(request, cancellationToken);
+                UnregisterCancellationToken(request);
 
-                if (TryRegisterCancellationToken(request, ref cancellationToken))
+                var writer = GetWriter(request);
+                if (writer != null)
                 {
-                    var responses = await ProcessRequestAsync(request, cancellationToken);
-                    UnregisterCancellationToken(request);
+                    var count = responses.Length;
+                    for (var index = 0; index < count; index++)
+                        output?.Invoke(responses[index], index == count - 1);
 
-                    var writer = GetWriter(request);
-                    if (writer != null)
-                    {
-                        var count = responses.Length;
-                        for (var index = 0; index < count; index++)
-                            output?.Invoke(responses[index], index == count - 1);
-
-                        await foreach (var writeResult in WriteResponsesAsync(writer, responses))
-                            if (writeResult.IsCanceled || writeResult.IsCompleted)
-                                continue;
-                    }
+                    await foreach (var writeResult in WriteResponsesAsync(writer, responses))
+                        if (writeResult.IsCanceled || writeResult.IsCompleted)
+                            continue;
                 }
             }
-
-            return buffer.Start;
         }
 
         private bool TryRegisterCancellationToken(Message message, ref CancellationToken cancellationToken)
@@ -109,9 +104,9 @@ namespace ZeroPipeline.Interfaces
             return PipeWriter.Create(callbackStream, callbackWriter);
         }
 
-        private bool TryReadRequest(ref ReadOnlySequence<byte> buffer, out Message request)
+        protected bool TryReadMessage(ref ReadOnlySequence<byte> buffer, out Message message)
         {
-            request = default;
+            message = default;
             var span = buffer.ToArray().AsSpan();
 
             var bomPos = span.IndexOf(Message.BOM);
@@ -125,7 +120,7 @@ namespace ZeroPipeline.Interfaces
             var length = eomPos - start;
 
             var data = span.Slice(start, length).ToArray();
-            request = ZeroFormatterSerializer.Deserialize<Message>(data);
+            message = ZeroFormatterSerializer.Deserialize<Message>(data);
 
             buffer = buffer.Slice(end);
             return true;

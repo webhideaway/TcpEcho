@@ -89,18 +89,23 @@ namespace ZeroPipeline
                             if (readResult.IsCanceled)
                                 break;
 
-                            consumed = await ProcessMessagesAsync(buffer,
-                                message =>
-                                {
-                                    var value = ProcessMessage(message, out Type type);
-                                    input?.Invoke(type, value);
-                                },
-                                (message, done) =>
-                                {
-                                    var value = ProcessMessage(message, out Type type);
-                                    output?.Invoke(type, value, done);
-                                }
-                            );
+                            while (TryReadMessage(ref buffer, out Message message))
+                            {
+                                _ = ProcessMessageAsync(message,
+                                    message =>
+                                    {
+                                        var value = ProcessMessage(message, out Type type);
+                                        input?.Invoke(type, value);
+                                    },
+                                    (message, done) =>
+                                    {
+                                        var value = ProcessMessage(message, out Type type);
+                                        output?.Invoke(type, value, done);
+                                    }
+                                );
+                            }
+
+                            consumed = buffer.Start;
 
                             if (readResult.IsCompleted)
                                 break;
@@ -119,22 +124,21 @@ namespace ZeroPipeline
         }
 
         public async Task CallbackAsync(
-            Action<Message> handler,
-            CancellationToken cancellationToken = default)
+            Action<Message> handler)
         {
             var reader = await AcceptAsync();
 
             try
             {
-                ReadResult readResult = await reader.ReadAsync(cancellationToken);
+                ReadResult readResult = await reader.ReadAsync();
                 ReadOnlySequence<byte> buffer = readResult.Buffer;
 
                 try
                 {
-                    await ProcessMessagesAsync(buffer,
-                        message => handler?.Invoke(message),
-                        cancellationToken: cancellationToken
-                    );
+                    if (TryReadMessage(ref buffer, out Message message))
+                        await ProcessMessageAsync(message,
+                            message => handler?.Invoke(message)
+                        );
                 }
                 finally
                 {
