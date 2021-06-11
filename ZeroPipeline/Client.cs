@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
@@ -29,6 +30,13 @@ namespace ZeroPipeline
 
             if (_callbackEndPoint != null)
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
+
+            _ = _callbackListener.CallbackAsync(callback =>
+            {
+                var response = ProcessMessage(callback, out Type type);
+                if (_callbackTasks.TryGetValue(callback.Id, out ValueTask<Action<Type, object>> callbackTask))
+                    callbackTask.Result?.Invoke(type, response);
+            });
         }
 
         private void SetRemoteWriter(IPEndPoint remoteEndPoint)
@@ -79,6 +87,8 @@ namespace ZeroPipeline
             , id);
         }
 
+        private ConcurrentDictionary<string, ValueTask<Action<Type, object>>> _callbackTasks = new();
+
         public async Task<string> PostAsync<TRequest>(TRequest request,
             Action<Type, object> responseHandler = null,
             CancellationToken cancellationToken = default)
@@ -94,15 +104,8 @@ namespace ZeroPipeline
                     {
                         await Task.WhenAll(
                             _remoteWriter.WriteAsync(data).AsTask(),
-                            _callbackListener.CallbackAsync(callback =>
-                            {
-                                if (id == callback.Id)
-                                {
-                                    var response = ProcessMessage(callback, out Type type);
-                                    responseHandler?.Invoke(type, response);
-                                }
-                            })
-                        );
+                            _callbackTasks.GetOrAdd(id, new ValueTask<Action<Type, object>>(responseHandler)).AsTask()
+                        ); ;
                     }
 
             return id;

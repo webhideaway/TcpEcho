@@ -133,7 +133,7 @@ namespace ZeroPipeline
                 try
                 {
                     if (TryReadMessage(ref buffer, out Message message))
-                        await ProcessMessageAsync(message,
+                        _ = ProcessMessageAsync(message,
                             message => handler?.Invoke(message)
                         );
                 }
