@@ -143,7 +143,7 @@ namespace ZeroPipeline
                         }
                         finally
                         {
-                            reader.CancelPendingRead();
+                            reader.AdvanceTo(buffer.Start, buffer.End);
                         }
                     }
                 }
