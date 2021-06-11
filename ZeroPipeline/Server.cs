@@ -123,28 +123,34 @@ namespace ZeroPipeline
         public async Task CallbackAsync(
             Action<Message> handler)
         {
-            var reader = await AcceptAsync();
-
-            try
+            while (true)
             {
-                ReadResult readResult = await reader.ReadAsync();
-                ReadOnlySequence<byte> buffer = readResult.Buffer;
+                var reader = await AcceptAsync();
 
                 try
                 {
-                    if (TryReadMessage(ref buffer, out Message message))
-                        _ = ProcessMessageAsync(message,
-                            message => handler?.Invoke(message)
-                        );
+                    while (true)
+                    {
+                        ReadResult readResult = await reader.ReadAsync();
+                        ReadOnlySequence<byte> buffer = readResult.Buffer;
+
+                        try
+                        {
+                            if (TryReadMessage(ref buffer, out Message message))
+                                _ = ProcessMessageAsync(message,
+                                    message => handler?.Invoke(message)
+                                );
+                        }
+                        finally
+                        {
+                            reader.CancelPendingRead();
+                        }
+                    }
                 }
                 finally
                 {
-                    reader.CancelPendingRead();
+                    await reader.CompleteAsync();
                 }
-            }
-            finally
-            {
-                await reader.CompleteAsync();
             }
         }
 
