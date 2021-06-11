@@ -34,7 +34,7 @@ namespace ZeroPipeline
                 _ = _callbackListener.CallbackAsync(callback =>
                 {
                     var response = ProcessMessage(callback, out Type type);
-                    if (_callbackTasks.TryGetValue(callback.Id, out ValueTask<Action<Type, object>> callbackTask))
+                    if (_callbackTasks.TryRemove(callback.Id, out ValueTask<Action<Type, object>> callbackTask))
                         callbackTask.Result?.Invoke(type, response);
                 });
             }
