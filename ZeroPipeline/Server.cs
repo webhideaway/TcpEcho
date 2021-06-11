@@ -169,9 +169,9 @@ namespace ZeroPipeline
                         }
                     }, cancellationToken);
 
-                    task.ContinueWith(task =>
+                    task.ContinueWith(t =>
                     {
-                        return HandleException(request.Id, task.Exception?.Flatten()?.GetBaseException());
+                        return HandleException(request.Id, t.Exception?.Flatten()?.GetBaseException());
                     },
                     TaskContinuationOptions.NotOnRanToCompletion);
 
