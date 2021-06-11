@@ -34,7 +34,7 @@ namespace ZeroPipeline
                 _ = _callbackListener.CallbackAsync(callback =>
                 {
                     var response = ProcessMessage(callback, out Type type);
-                    if (_callbackTasks.TryRemove(callback.Id, out Task<Action<Type, object>> callbackTask))
+                    if (_callbackTasks.TryGetValue(callback.Id, out Task<Action<Type, object>> callbackTask))
                     {
                         callbackTask.Start();
                         callbackTask.Result?.Invoke(type, response);
@@ -102,15 +102,18 @@ namespace ZeroPipeline
             if (!cancellationToken.Equals(default))
                 using (var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken))
 
-                    if (_callbackEndPoint == null)
-                        await _remoteWriter.WriteAsync(data);
-                    else
-                    {
-                        await Task.WhenAll(
-                            _remoteWriter.WriteAsync(data).AsTask(),
-                            _callbackTasks.GetOrAdd(id, new Task<Action<Type, object>>(() => responseHandler))
-                        ); ;
-                    }
+            if (_callbackEndPoint == null)
+                await _remoteWriter.WriteAsync(data);
+            else
+            {
+                await Task.WhenAll(
+                    _remoteWriter.WriteAsync(data).AsTask(),
+                    _callbackTasks.GetOrAdd(id, new Task<Action<Type, object>>(() => responseHandler))
+                ); ;
+            }
+
+            if (_callbackTasks.TryRemove(id, out Task<Action<Type, object>> callbackTask))
+                callbackTask.Dispose();
 
             return id;
         }
