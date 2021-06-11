@@ -29,14 +29,15 @@ namespace ZeroPipeline
             _callbackEndPoint = callbackEndPoint;
 
             if (_callbackEndPoint != null)
-                _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-
-            _ = _callbackListener.CallbackAsync(callback =>
             {
-                var response = ProcessMessage(callback, out Type type);
-                if (_callbackTasks.TryGetValue(callback.Id, out ValueTask<Action<Type, object>> callbackTask))
-                    callbackTask.Result?.Invoke(type, response);
-            });
+                _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
+                _ = _callbackListener.CallbackAsync(callback =>
+                {
+                    var response = ProcessMessage(callback, out Type type);
+                    if (_callbackTasks.TryGetValue(callback.Id, out ValueTask<Action<Type, object>> callbackTask))
+                        callbackTask.Result?.Invoke(type, response);
+                });
+            }
         }
 
         private void SetRemoteWriter(IPEndPoint remoteEndPoint)
