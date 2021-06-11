@@ -182,7 +182,7 @@ namespace ZeroPipeline
                 }
                 catch (Exception exception)
                 {
-                    return invocationList.Select(handler => 
+                    return invocationList.Select(handler =>
                         HandleException(request.Id, exception.GetBaseException())).ToArray();
                 }
             }
