@@ -136,10 +136,16 @@ namespace ZeroPipeline
 
                         try
                         {
-                            if (TryReadMessage(ref buffer, out Message message))
+                            if (readResult.IsCanceled)
+                                break;
+
+                            while (TryReadMessage(ref buffer, out Message message))
                                 _ = ProcessMessageAsync(message,
                                     message => handler?.Invoke(message)
                                 );
+
+                            if (readResult.IsCompleted)
+                                break;
                         }
                         finally
                         {
