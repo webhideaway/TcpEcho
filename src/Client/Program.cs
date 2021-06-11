@@ -48,7 +48,7 @@ namespace Client
                         var timeout = random.Next(1000, 15000);
                         Console.WriteLine($"PERSON [REQUEST (timeout: {timeout}ms)] [Name = {person.Name}, Age = {person.Age}]");
 
-                        await client.PostAsync<Person>(person, (type, response) =>
+                        _ = client.PostAsync<Person>(person, (type, response) =>
                         {
                             if (type == typeof(Person))
                             {
@@ -74,7 +74,7 @@ namespace Client
                         var timeout = random.Next(1000, 15000);
                         Console.WriteLine($"CAR [REQUEST (timeout: {timeout}ms)] [Reg = {car.Reg}, Age = {car.Age}]");
 
-                        await client.PostAsync<Car>(car, (type, response) =>
+                        _ = client.PostAsync<Car>(car, (type, response) =>
                         {
                             if (type == typeof(Car))
                             {

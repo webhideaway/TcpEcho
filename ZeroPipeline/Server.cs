@@ -155,28 +155,36 @@ namespace ZeroPipeline
             if (_registeredHandlers.TryGetValue(type, out Delegate handlers))
             {
                 var invocationList = handlers.GetInvocationList();
-                return await Task.WhenAll(invocationList.Select(handler =>
+                try
                 {
-                    var task = Task<Message>.Factory.StartNew(() =>
+                    return await Task.WhenAll(invocationList.Select(handler =>
                     {
-                        try
+                        var task = Task<Message>.Factory.StartNew(() =>
                         {
-                            return HandleRequest(request, handler);
-                        }
-                        catch (Exception exception)
+                            try
+                            {
+                                return HandleRequest(request, handler);
+                            }
+                            catch (Exception exception)
+                            {
+                                return HandleException(request.Id, exception.GetBaseException());
+                            }
+                        }, cancellationToken);
+
+                        task.ContinueWith(t =>
                         {
-                            return HandleException(request.Id, exception.GetBaseException());
-                        }
-                    }, cancellationToken);
+                            return HandleException(request.Id, t.Exception?.Flatten()?.GetBaseException());
+                        },
+                        TaskContinuationOptions.NotOnRanToCompletion);
 
-                    task.ContinueWith(t =>
-                    {
-                        return HandleException(request.Id, t.Exception?.Flatten()?.GetBaseException());
-                    },
-                    TaskContinuationOptions.NotOnRanToCompletion);
-
-                    return task;
-                }));
+                        return task;
+                    }));
+                }
+                catch (Exception exception)
+                {
+                    return invocationList.Select(handler => 
+                        HandleException(request.Id, exception.GetBaseException())).ToArray();
+                }
             }
             return new Message[] { };
         }
