@@ -34,8 +34,11 @@ namespace ZeroPipeline
                 _ = _callbackListener.CallbackAsync(callback =>
                 {
                     var response = ProcessMessage(callback, out Type type);
-                    if (_callbackTasks.TryRemove(callback.Id, out ValueTask<Action<Type, object>> callbackTask))
+                    if (_callbackTasks.TryRemove(callback.Id, out Task<Action<Type, object>> callbackTask))
+                    {
+                        callbackTask.Start();
                         callbackTask.Result?.Invoke(type, response);
+                    }
                 });
             }
         }
@@ -88,7 +91,7 @@ namespace ZeroPipeline
             , id);
         }
 
-        private ConcurrentDictionary<string, ValueTask<Action<Type, object>>> _callbackTasks = new();
+        private ConcurrentDictionary<string, Task<Action<Type, object>>> _callbackTasks = new();
 
         public async Task<string> PostAsync<TRequest>(TRequest request,
             Action<Type, object> responseHandler = null,
@@ -105,7 +108,7 @@ namespace ZeroPipeline
                     {
                         await Task.WhenAll(
                             _remoteWriter.WriteAsync(data).AsTask(),
-                            _callbackTasks.GetOrAdd(id, new ValueTask<Action<Type, object>>(responseHandler)).AsTask()
+                            _callbackTasks.GetOrAdd(id, new Task<Action<Type, object>>(() => responseHandler))
                         ); ;
                     }
 
