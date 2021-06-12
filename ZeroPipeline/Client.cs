@@ -103,18 +103,15 @@ namespace ZeroPipeline
             if (!cancellationToken.Equals(default))
                 using (var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken))
 
-            if (_callbackEndPoint == null)
-                await _remoteWriter.WriteAsync(data);
-            else
-            {
-                await Task.WhenAll(
-                    _remoteWriter.WriteAsync(data).AsTask(),
-                    _callbackTasks.GetOrAdd(id, new Task<Action<Type, object>>(() => responseHandler))
-                ); ;
-            }
+            await _remoteWriter.WriteAsync(data);
 
-            if (_callbackTasks.TryRemove(id, out Task<Action<Type, object>> callbackTask))
-                callbackTask.Dispose();
+            if (_callbackEndPoint != null)
+            {
+                await _callbackTasks.GetOrAdd(id, new Task<Action<Type, object>>(() => responseHandler));
+
+                if (_callbackTasks.TryRemove(id, out Task<Action<Type, object>> callbackTask))
+                    callbackTask.Dispose();
+            }
 
             return id;
         }
