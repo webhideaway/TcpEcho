@@ -20,6 +20,7 @@ namespace ZeroPipeline
         private bool _disposedValue;
         private IPEndPoint _callbackEndPoint;
         private IFormatter _formatter;
+        private Task _callbackTask;
 
         public Client(IPEndPoint remoteEndPoint, IPEndPoint callbackEndPoint = null, IFormatter formatter = null)
         {
@@ -31,7 +32,7 @@ namespace ZeroPipeline
             if (_callbackEndPoint != null)
             {
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-                _ = _callbackListener.CallbackAsync(callback =>
+                _callbackTask = _callbackListener.CallbackAsync(callback =>
                 {
                     var response = ProcessMessage(callback, out Type type);
                     if (_callbackTasks.TryGetValue(callback.Id, out Task<Action<Type, object>> callbackTask))
@@ -91,7 +92,7 @@ namespace ZeroPipeline
             , id);
         }
 
-        private ConcurrentDictionary<string, Task<Action<Type, object>>> _callbackTasks = new();
+        private static ConcurrentDictionary<string, Task<Action<Type, object>>> _callbackTasks = new();
 
         public async Task<string> PostAsync<TRequest>(TRequest request,
             Action<Type, object> responseHandler = null,
@@ -128,6 +129,7 @@ namespace ZeroPipeline
                     _remoteSocket?.Dispose();
                     _formatter?.Dispose();
                     _callbackListener?.Dispose();
+                    _callbackTask?.Dispose();
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer
