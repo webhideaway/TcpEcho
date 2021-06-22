@@ -38,19 +38,13 @@ namespace ZeroPipeline
             if (_callbackEndPoint != null)
             {
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-                _callbackTask = Task.Factory.StartNew(async () =>
+                _callbackTask = _callbackListener.CallbackAsync(callback =>
                 {
-                    while (true)
+                    var response = ProcessMessage(callback, out Type type);
+                    if (_callbackTasks.TryGetValue(callback.Id, out Task<Action<Type, object>> callbackTask))
                     {
-                        await _callbackListener.CallbackAsync(callback =>
-                        {
-                            var response = ProcessMessage(callback, out Type type);
-                            if (_callbackTasks.TryGetValue(callback.Id, out Task<Action<Type, object>> callbackTask))
-                            {
-                                callbackTask.Start();
-                                callbackTask.Result?.Invoke(type, response);
-                            }
-                        });
+                        callbackTask.Start();
+                        callbackTask.Result?.Invoke(type, response);
                     }
                 });
             }
