@@ -40,7 +40,7 @@ namespace ZeroPipeline
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
                 _callbackTask = Task.Factory.StartNew(async () =>
                 {
-                    while (_callbackTasks.Any())
+                    while (true)
                     {
                         await _callbackListener.CallbackAsync(callback =>
                         {
