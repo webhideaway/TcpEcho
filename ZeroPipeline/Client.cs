@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO.Pipelines;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -29,16 +30,27 @@ namespace ZeroPipeline
             _formatter = formatter ?? new DefaultFormatter();
             _callbackEndPoint = callbackEndPoint;
 
+            SetCallbackListener();
+        }
+
+        private void SetCallbackListener()
+        {
             if (_callbackEndPoint != null)
             {
                 _callbackListener = new Server(_callbackEndPoint, formatter: _formatter);
-                _callbackTask = _callbackListener.CallbackAsync(callback =>
+                _callbackTask = Task.Factory.StartNew(async () =>
                 {
-                    var response = ProcessMessage(callback, out Type type);
-                    if (_callbackTasks.TryGetValue(callback.Id, out Task<Action<Type, object>> callbackTask))
+                    while (_callbackTasks.Any())
                     {
-                        callbackTask.Start();
-                        callbackTask.Result?.Invoke(type, response);
+                        await _callbackListener.CallbackAsync(callback =>
+                        {
+                            var response = ProcessMessage(callback, out Type type);
+                            if (_callbackTasks.TryGetValue(callback.Id, out Task<Action<Type, object>> callbackTask))
+                            {
+                                callbackTask.Start();
+                                callbackTask.Result?.Invoke(type, response);
+                            }
+                        });
                     }
                 });
             }
