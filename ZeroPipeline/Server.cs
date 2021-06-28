@@ -129,7 +129,7 @@ namespace ZeroPipeline
 
                 try
                 {
-                    while (true)
+                    //while (true)
                     {
                         ReadResult readResult = await reader.ReadAsync();
                         ReadOnlySequence<byte> buffer = readResult.Buffer;
