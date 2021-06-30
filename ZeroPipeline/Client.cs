@@ -106,8 +106,10 @@ namespace ZeroPipeline
         {
             var data = ProcessRequest(request, out string id);
 
+            CancellationTokenRegistration cancellationTokenRegistration = default;
+
             if (!cancellationToken.Equals(default))
-                using (var cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken))
+                cancellationTokenRegistration = RegisterCancellationToken(id, ref cancellationToken);
 
             await _remoteWriter.WriteAsync(data);
 
@@ -118,6 +120,8 @@ namespace ZeroPipeline
                 if (_callbackTasks.TryRemove(id, out Task<Action<Type, object>> callbackTask))
                     callbackTask.Dispose();
             }
+
+            cancellationTokenRegistration.Dispose();
 
             return id;
         }

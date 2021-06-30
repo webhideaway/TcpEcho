@@ -48,19 +48,19 @@ namespace Client
                         var timeout = random.Next(1000, 15000);
                         Console.WriteLine($"PERSON [REQUEST (timeout: {timeout}ms)] [Name = {person.Name}, Age = {person.Age}]");
 
-                        _ = client.PostAsync<Person>(person, (type, response) =>
-                        {
-                            if (type == typeof(Person))
-                            {
-                                var callback = (Person)response;
-                                Console.WriteLine($"PERSON [RESPONSE] [Name = {callback.Name}, Age = {callback.Age}]");
-                            }
-                            else if (type == typeof(Exception))
-                            {
-                                var exception = (string)response;
-                                Console.WriteLine($"PERSON [RESPONSE] [Exception = {exception}]");
-                            }
-                        }, new CancellationTokenSource(timeout).Token);
+                        using (_ = client.PostAsync<Person>(person, (type, response) =>
+                         {
+                             if (type == typeof(Person))
+                             {
+                                 var callback = (Person)response;
+                                 Console.WriteLine($"PERSON [RESPONSE] [Name = {callback.Name}, Age = {callback.Age}]");
+                             }
+                             else if (type == typeof(Exception))
+                             {
+                                 var exception = (string)response;
+                                 Console.WriteLine($"PERSON [RESPONSE] [Exception = {exception}]");
+                             }
+                         }, new CancellationTokenSource(timeout).Token)) ;
                     }
                     else
                     {
@@ -74,19 +74,19 @@ namespace Client
                         var timeout = random.Next(1000, 15000);
                         Console.WriteLine($"CAR [REQUEST (timeout: {timeout}ms)] [Reg = {car.Reg}, Age = {car.Age}]");
 
-                        _ = client.PostAsync<Car>(car, (type, response) =>
-                        {
-                            if (type == typeof(Car))
-                            {
-                                var callback = (Car)response;
-                                Console.WriteLine($"CAR [RESPONSE] [Reg = {callback.Reg}, Age = {callback.Age}]");
-                            }
-                            else if (type == typeof(Exception))
-                            {
-                                var exception = (string)response;
-                                Console.WriteLine($"CAR [RESPONSE] [Exception = {exception}]");
-                            }
-                        }, new CancellationTokenSource(timeout).Token);
+                        using (_ = client.PostAsync<Car>(car, (type, response) =>
+                         {
+                             if (type == typeof(Car))
+                             {
+                                 var callback = (Car)response;
+                                 Console.WriteLine($"CAR [RESPONSE] [Reg = {callback.Reg}, Age = {callback.Age}]");
+                             }
+                             else if (type == typeof(Exception))
+                             {
+                                 var exception = (string)response;
+                                 Console.WriteLine($"CAR [RESPONSE] [Exception = {exception}]");
+                             }
+                         }, new CancellationTokenSource(timeout).Token)) ;
                     }
                 }
 

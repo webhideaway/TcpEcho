@@ -90,7 +90,7 @@ namespace ZeroPipeline
 
                             while (TryReadMessage(ref buffer, out Message message))
                             {
-                                _ = ProcessMessageAsync(message,
+                                using (_ = ProcessMessageAsync(message,
                                     message =>
                                     {
                                         var value = ProcessMessage(message, out Type type);
@@ -101,7 +101,7 @@ namespace ZeroPipeline
                                         var value = ProcessMessage(message, out Type type);
                                         output?.Invoke(type, value, done);
                                     }
-                                );
+                                )) ;
                             }
 
                             if (readResult.IsCompleted)
@@ -140,9 +140,9 @@ namespace ZeroPipeline
                                 break;
 
                             while (TryReadMessage(ref buffer, out Message message))
-                                _ = ProcessMessageAsync(message,
+                                using (_ = ProcessMessageAsync(message,
                                     message => handler?.Invoke(message)
-                                );
+                                )) ;
 
                             if (readResult.IsCompleted)
                                 break;
