@@ -72,92 +72,104 @@ namespace ZeroPipeline
             Action<Type, object> input = null,
             Action<Type, object, bool> output = null)
         {
-            while (true)
+            _ = Task.Factory.StartNew(async () =>
             {
-                var reader = await AcceptAsync();
-
-                try
+                while (true)
                 {
-                    while (true)
+                    var reader = await AcceptAsync();
+
+                    try
                     {
-                        ReadResult readResult = await reader.ReadAsync();
-                        ReadOnlySequence<byte> buffer = readResult.Buffer;
-
-                        try
+                        _ = Task.Factory.StartNew(async () =>
                         {
-                            if (readResult.IsCanceled)
-                                break;
-
-                            while (TryReadMessage(ref buffer, out Message message))
+                            while (true)
                             {
-                                using (_ = ProcessMessageAsync(message,
-                                    message =>
-                                    {
-                                        var value = ProcessMessage(message, out Type type);
-                                        input?.Invoke(type, value);
-                                    },
-                                    (message, done) =>
-                                    {
-                                        var value = ProcessMessage(message, out Type type);
-                                        output?.Invoke(type, value, done);
-                                    }
-                                )) ;
-                            }
+                                ReadResult readResult = await reader.ReadAsync();
+                                ReadOnlySequence<byte> buffer = readResult.Buffer;
 
-                            if (readResult.IsCompleted)
-                                break;
+                                try
+                                {
+                                    if (readResult.IsCanceled)
+                                        break;
+
+                                    while (TryReadMessage(ref buffer, out Message message))
+                                    {
+                                        using (_ = ProcessMessageAsync(message,
+                                            message =>
+                                            {
+                                                var value = ProcessMessage(message, out Type type);
+                                                input?.Invoke(type, value);
+                                            },
+                                            (message, done) =>
+                                            {
+                                                var value = ProcessMessage(message, out Type type);
+                                                output?.Invoke(type, value, done);
+                                            }
+                                        )) ;
+                                    }
+
+                                    if (readResult.IsCompleted)
+                                        break;
+                                }
+                                finally
+                                {
+                                    reader.AdvanceTo(buffer.Start, buffer.End);
+                                }
+                            }
+                        });
                         }
-                        finally
-                        {
-                            reader.AdvanceTo(buffer.Start, buffer.End);
-                        }
+                    finally
+                    {
+                        await reader.CompleteAsync();
                     }
                 }
-                finally
-                {
-                    await reader.CompleteAsync();
-                }
-            }
+            });
         }
 
         public async Task CallbackAsync(
             Action<Message> handler)
         {
-            while (true)
+            _ = Task.Factory.StartNew(async () =>
             {
-                var reader = await AcceptAsync();
-
-                try
+                while (true)
                 {
-                    //while (true)
+                    var reader = await AcceptAsync();
+
+                    try
                     {
-                        ReadResult readResult = await reader.ReadAsync();
-                        ReadOnlySequence<byte> buffer = readResult.Buffer;
+                        _ = Task.Factory.StartNew(async () =>
+                          {
+                              while (true)
+                              {
+                                  ReadResult readResult = await reader.ReadAsync();
+                                  ReadOnlySequence<byte> buffer = readResult.Buffer;
 
-                        try
-                        {
-                            if (readResult.IsCanceled)
-                                break;
+                                  try
+                                  {
+                                      if (readResult.IsCanceled)
+                                          break;
 
-                            while (TryReadMessage(ref buffer, out Message message))
-                                using (_ = ProcessMessageAsync(message,
-                                    message => handler?.Invoke(message)
-                                )) ;
+                                      while (TryReadMessage(ref buffer, out Message message))
+                                          using (_ = ProcessMessageAsync(message,
+                                              message => handler?.Invoke(message)
+                                          )) ;
 
-                            if (readResult.IsCompleted)
-                                break;
-                        }
-                        finally
-                        {
-                            reader.AdvanceTo(buffer.Start, buffer.End);
-                        }
+                                      if (readResult.IsCompleted)
+                                          break;
+                                  }
+                                  finally
+                                  {
+                                      reader.AdvanceTo(buffer.Start, buffer.End);
+                                  }
+                              }
+                          });
+                    }
+                    finally
+                    {
+                        await reader.CompleteAsync();
                     }
                 }
-                finally
-                {
-                    await reader.CompleteAsync();
-                }
-            }
+            });
         }
 
         protected override async Task<Message[]> ProcessRequestAsync(Message request,
