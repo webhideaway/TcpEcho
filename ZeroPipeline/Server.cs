@@ -72,15 +72,67 @@ namespace ZeroPipeline
             Action<Type, object> input = null,
             Action<Type, object, bool> output = null)
         {
-            _ = Task.Factory.StartNew(async () =>
+            while (true)
             {
-                while (true)
-                {
-                    var reader = await AcceptAsync();
+                var reader = await AcceptAsync();
 
-                    try
+                try
+                {
+                    _ = Task.Factory.StartNew(async () =>
                     {
-                        _ = Task.Factory.StartNew(async () =>
+                        while (true)
+                        {
+                            ReadResult readResult = await reader.ReadAsync();
+                            ReadOnlySequence<byte> buffer = readResult.Buffer;
+
+                            try
+                            {
+                                if (readResult.IsCanceled)
+                                    break;
+
+                                while (TryReadMessage(ref buffer, out Message message))
+                                {
+                                    using (_ = ProcessMessageAsync(message,
+                                        message =>
+                                        {
+                                            var value = ProcessMessage(message, out Type type);
+                                            input?.Invoke(type, value);
+                                        },
+                                        (message, done) =>
+                                        {
+                                            var value = ProcessMessage(message, out Type type);
+                                            output?.Invoke(type, value, done);
+                                        }
+                                    )) ;
+                                }
+
+                                if (readResult.IsCompleted)
+                                    break;
+                            }
+                            finally
+                            {
+                                reader.AdvanceTo(buffer.Start, buffer.End);
+                            }
+                        }
+                    });
+                    }
+                finally
+                {
+                    await reader.CompleteAsync();
+                }
+            }
+        }
+
+        public async Task CallbackAsync(
+            Action<Message> handler)
+        {
+            while (true)
+            {
+                var reader = await AcceptAsync();
+
+                try
+                {
+                    _ = Task.Factory.StartNew(async () =>
                         {
                             while (true)
                             {
@@ -93,20 +145,9 @@ namespace ZeroPipeline
                                         break;
 
                                     while (TryReadMessage(ref buffer, out Message message))
-                                    {
                                         using (_ = ProcessMessageAsync(message,
-                                            message =>
-                                            {
-                                                var value = ProcessMessage(message, out Type type);
-                                                input?.Invoke(type, value);
-                                            },
-                                            (message, done) =>
-                                            {
-                                                var value = ProcessMessage(message, out Type type);
-                                                output?.Invoke(type, value, done);
-                                            }
+                                            message => handler?.Invoke(message)
                                         )) ;
-                                    }
 
                                     if (readResult.IsCompleted)
                                         break;
@@ -117,59 +158,12 @@ namespace ZeroPipeline
                                 }
                             }
                         });
-                        }
-                    finally
-                    {
-                        await reader.CompleteAsync();
-                    }
                 }
-            });
-        }
-
-        public async Task CallbackAsync(
-            Action<Message> handler)
-        {
-            _ = Task.Factory.StartNew(async () =>
-            {
-                while (true)
+                finally
                 {
-                    var reader = await AcceptAsync();
-
-                    try
-                    {
-                        _ = Task.Factory.StartNew(async () =>
-                          {
-                              while (true)
-                              {
-                                  ReadResult readResult = await reader.ReadAsync();
-                                  ReadOnlySequence<byte> buffer = readResult.Buffer;
-
-                                  try
-                                  {
-                                      if (readResult.IsCanceled)
-                                          break;
-
-                                      while (TryReadMessage(ref buffer, out Message message))
-                                          using (_ = ProcessMessageAsync(message,
-                                              message => handler?.Invoke(message)
-                                          )) ;
-
-                                      if (readResult.IsCompleted)
-                                          break;
-                                  }
-                                  finally
-                                  {
-                                      reader.AdvanceTo(buffer.Start, buffer.End);
-                                  }
-                              }
-                          });
-                    }
-                    finally
-                    {
-                        await reader.CompleteAsync();
-                    }
+                    await reader.CompleteAsync();
                 }
-            });
+            }
         }
 
         protected override async Task<Message[]> ProcessRequestAsync(Message request,
