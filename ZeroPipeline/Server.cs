@@ -78,7 +78,7 @@ namespace ZeroPipeline
 
                 try
                 {
-                    await Task.Factory.StartNew(async () =>
+                    _ = Task.Factory.StartNew(async () =>
                     {
                         while (true)
                         {
@@ -114,7 +114,7 @@ namespace ZeroPipeline
                                 reader.AdvanceTo(buffer.Start, buffer.End);
                             }
                         }
-                    }).Unwrap();
+                    });
                 }
                 finally
                 {
@@ -132,32 +132,32 @@ namespace ZeroPipeline
 
                 try
                 {
-                    await Task.Factory.StartNew(async () =>
+                    _ = Task.Factory.StartNew(async () =>
+                    {
+                        while (true)
                         {
-                            while (true)
+                            ReadResult readResult = await reader.ReadAsync();
+                            ReadOnlySequence<byte> buffer = readResult.Buffer;
+
+                            try
                             {
-                                ReadResult readResult = await reader.ReadAsync();
-                                ReadOnlySequence<byte> buffer = readResult.Buffer;
+                                if (readResult.IsCanceled)
+                                    break;
 
-                                try
-                                {
-                                    if (readResult.IsCanceled)
-                                        break;
+                                while (TryReadMessage(ref buffer, out Message message))
+                                    _ = ProcessMessageAsync(message,
+                                        message => handler?.Invoke(message)
+                                    );
 
-                                    while (TryReadMessage(ref buffer, out Message message))
-                                        _ = ProcessMessageAsync(message,
-                                            message => handler?.Invoke(message)
-                                        );
-
-                                    if (readResult.IsCompleted)
-                                        break;
-                                }
-                                finally
-                                {
-                                    reader.AdvanceTo(buffer.Start, buffer.End);
-                                }
+                                if (readResult.IsCompleted)
+                                    break;
                             }
-                        }).Unwrap();
+                            finally
+                            {
+                                reader.AdvanceTo(buffer.Start, buffer.End);
+                            }
+                        }
+                    });
                 }
                 finally
                 {
