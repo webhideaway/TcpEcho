@@ -78,7 +78,7 @@ namespace ZeroPipeline
 
                 try
                 {
-                    _ = Task.Factory.StartNew(async () =>
+                    await Task.Factory.StartNew(async () =>
                     {
                         while (true)
                         {
@@ -114,8 +114,8 @@ namespace ZeroPipeline
                                 reader.AdvanceTo(buffer.Start, buffer.End);
                             }
                         }
-                    });
-                    }
+                    }).Unwrap();
+                }
                 finally
                 {
                     await reader.CompleteAsync();
@@ -132,7 +132,7 @@ namespace ZeroPipeline
 
                 try
                 {
-                    _ = Task.Factory.StartNew(async () =>
+                    await Task.Factory.StartNew(async () =>
                         {
                             while (true)
                             {
@@ -157,7 +157,7 @@ namespace ZeroPipeline
                                     reader.AdvanceTo(buffer.Start, buffer.End);
                                 }
                             }
-                        });
+                        }).Unwrap();
                 }
                 finally
                 {
