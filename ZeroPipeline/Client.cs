@@ -43,8 +43,9 @@ namespace ZeroPipeline
                     var response = ProcessMessage(callback, out Type type);
                     if (_callbackTasks.TryGetValue(callback.Id, out Task<Action<Type, object>> callbackTask))
                     {
+                        callbackTask.ContinueWith(_ => _.Result?.Invoke(type, response), 
+                            TaskContinuationOptions.OnlyOnRanToCompletion);
                         callbackTask.Start();
-                        callbackTask.Result?.Invoke(type, response);
                     }
                 });
             }
